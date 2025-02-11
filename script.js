@@ -30,7 +30,6 @@ function startCalculation() {
 
                 const result = comparePortfolioWithSP500(transactions, sp500Data);
                 displayResult(result);
-                drawChart(transactions, sp500Data);
             })
             .catch(error => console.error("❌ שגיאה בטעינת sp500_data.csv:", error));
     };
@@ -38,22 +37,22 @@ function startCalculation() {
     reader.readAsText(file);
 }
 
-// פונקציה לפענוח קובץ ה-CSV של המשתמש
+// ✅ פונקציה לפענוח קובץ הקניות והמכירות
 function parseCSV(data) {
-    const delimiter = data.includes("\t") ? "\t" : ","; 
-    const rows = data.split("\n").map(row => row.split(delimiter));
-    const headers = rows[0].map(header => header.trim());
+    const rows = data.split("\n").map(row => row.trim()).filter(row => row.length > 0); // מסיר שורות ריקות
+    const headers = rows[0].split(",").map(header => header.trim());
 
     return rows.slice(1).map(row => {
+        const values = row.split(",");
         let obj = {};
         headers.forEach((header, index) => {
-            obj[header] = row[index]?.trim();
+            obj[header] = values[index]?.trim();
         });
         return obj;
-    }).filter(row => Object.keys(row).length > 1);
+    }).filter(row => row.Date && row.Action && row.Amount); // מסנן שורות ריקות
 }
 
-// ✅ פונקציה לפענוח `sp500_data.csv` - הסרת הכותרת `Date,Close` ותמיכה בהפרדות שונות
+// ✅ פונקציה לפענוח `sp500_data.csv`
 function parseSP500CSV(data) {
     const rows = data.split("\n").map(row => row.trim()).filter(row => row.length > 0); // מסיר שורות ריקות
 
@@ -65,8 +64,8 @@ function parseSP500CSV(data) {
     rows.shift(); // מסיר את הכותרת (Date,Close)
 
     return rows.map(row => {
-        const columns = row.includes(",") ? row.split(",") : row.split(/\s+/); // תומך גם ברווחים וגם בפסיקים
-        if (columns.length !== 2) return null; // וידוא שיש בדיוק שני עמודות
+        const columns = row.split(","); // מפריד לפי פסיקים
+        if (columns.length !== 2) return null; // מוודא שיש בדיוק שני עמודות
 
         return {
             date: columns[0].trim(),
@@ -75,22 +74,22 @@ function parseSP500CSV(data) {
     }).filter(row => row !== null && !isNaN(row.close)); // מסנן שורות ריקות או שגויות
 }
 
-// פונקציה להשוואה בין תיק המשתמש ל-S&P 500
+// ✅ פונקציה להשוואה בין תיק המשתמש ל-S&P 500
 function comparePortfolioWithSP500(transactions, sp500Data) {
     let sp500Units = 0;
     let totalValue = 0;
 
     transactions.forEach(transaction => {
         const date = transaction["Date"];
-        const action = transaction["Action"];
+        const action = transaction["Action"].toLowerCase();
         const amount = parseFloat(transaction["Amount"]);
 
         const spPrice = sp500Data.find(row => row.date === date)?.close;
         if (!spPrice) return;
 
         const units = amount / spPrice;
-        if (action.toLowerCase() === "buy") sp500Units += units;
-        if (action.toLowerCase() === "sell") sp500Units -= units;
+        if (action === "buy") sp500Units += units;
+        if (action === "sell") sp500Units -= units;
     });
 
     const lastPrice = sp500Data[sp500Data.length - 1]?.close || 0;
@@ -99,49 +98,7 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
     return `📈 שווי התיק אילו היה מושקע ב-S&P 500: ${totalValue.toFixed(2)} דולר`;
 }
 
-// פונקציה להצגת התוצאה
+// ✅ פונקציה להצגת התוצאה
 function displayResult(result) {
     document.getElementById('result').innerText = result;
-}
-
-// פונקציה לציור הגרף
-function drawChart(transactions, sp500Data) {
-    const labels = transactions.map(t => t.Date);
-    const portfolioValues = [];
-    let sp500Units = 0;
-    
-    transactions.forEach(transaction => {
-        const date = transaction["Date"];
-        const action = transaction["Action"];
-        const amount = parseFloat(transaction["Amount"]);
-        
-        const spPrice = sp500Data.find(row => row.date === date)?.close;
-        if (!spPrice) return;
-
-        const units = amount / spPrice;
-        if (action.toLowerCase() === "buy") sp500Units += units;
-        if (action.toLowerCase() === "sell") sp500Units -= units;
-
-        const totalValue = sp500Units * spPrice;
-        portfolioValues.push(totalValue);
-    });
-
-    const ctx = document.getElementById('comparisonChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'שווי התיק (אם היה מושקע ב-S&P 500)',
-                data: portfolioValues,
-                borderColor: 'blue',
-                backgroundColor: 'rgba(0, 123, 255, 0.2)',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false
-        }
-    });
 }

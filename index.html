@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>השוואת תיק ל-S&P 500</title>
+</head>
+<body>
+    <h1>השוואת תיק השקעות ל-S&P 500</h1>
+    <p>העלה קובץ CSV עם נתוני קנייה ומכירה של מניות, ונחשב איך התיק שלך היה נראה אם היית משקיע ב-S&P 500.</p>
+    
+    <input type="file" id="fileInput" accept=".csv">
+    <button onclick="alert('כאן בעתיד יבוצע החישוב')">חשב</button>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            alert('הקובץ נטען, בקרוב נבצע את החישוב!');
+        });
+    </script>
+</body>
+</html>

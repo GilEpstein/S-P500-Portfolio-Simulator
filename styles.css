@@ -1,61 +1,86 @@
-/* עיצוב כללי */
-body {
-    font-family: 'Arial', sans-serif;
-    text-align: center;
-    background-color: #f8f9fa;
-    margin: 0;
-    padding: 20px;
+function startCalculation() {
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput.files.length === 0) {
+        alert("❌ אנא בחר קובץ CSV להעלאה!");
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        const csvData = e.target.result;
+        const transactions = parseCSV(csvData);
+
+        console.log("📂 נתוני התיק לאחר פענוח:", transactions);
+
+        fetch('sp500_data.csv')
+            .then(response => response.text())
+            .then(data => {
+                console.log("📊 תוכן גולמי של sp500_data.csv:");
+                console.log(data);
+
+                const sp500Data = parseSP500CSV(data);
+                console.log("📊 נתוני S&P 500 לאחר פענוח:", sp500Data);
+
+                const result = comparePortfolioWithSP500(transactions, sp500Data);
+                displayResult(result);
+            })
+            .catch(error => console.error("❌ שגיאה בטעינת sp500_data.csv:", error));
+    };
+
+    reader.readAsText(file);
 }
 
-/* קונטיינר מרכזי */
-.container {
-    max-width: 600px;
-    margin: auto;
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+// פונקציה לפענוח קובץ ה-CSV של המשתמש
+function parseCSV(data) {
+    const delimiter = data.includes("\t") ? "\t" : ","; 
+    const rows = data.split("\n").map(row => row.split(delimiter));
+    const headers = rows[0].map(header => header.trim());
+
+    return rows.slice(1).map(row => {
+        let obj = {};
+        headers.forEach((header, index) => {
+            obj[header] = row[index]?.trim();
+        });
+        return obj;
+    }).filter(row => Object.keys(row).length > 1);
 }
 
-/* כותרת ראשית */
-h1 {
-    color: #333;
-    font-size: 26px;
+// פונקציה לפענוח קובץ `sp500_data.csv`
+function parseSP500CSV(data) {
+    const rows = data.split("\n").map(row => row.split(/\s+/));
+    return rows.slice(1).map(row => ({
+        date: row[0], 
+        close: parseFloat(row[1])
+    })).filter(row => row.date && !isNaN(row.close));
 }
 
-/* תיבת העלאת קובץ */
-.file-input {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 15px 0;
+// פונקציה להשוואה בין תיק המשתמש ל-S&P 500
+function comparePortfolioWithSP500(transactions, sp500Data) {
+    let sp500Units = 0;
+    let totalValue = 0;
+
+    transactions.forEach(transaction => {
+        const date = transaction["Date"];
+        const action = transaction["Action"];
+        const amount = parseFloat(transaction["Amount"]);
+
+        const spPrice = sp500Data.find(row => row.date === date)?.close;
+        if (!spPrice) return;
+
+        const units = amount / spPrice;
+        if (action.toLowerCase() === "buy") sp500Units += units;
+        if (action.toLowerCase() === "sell") sp500Units -= units;
+    });
+
+    const lastPrice = sp500Data[sp500Data.length - 1]?.close || 0;
+    totalValue = sp500Units * lastPrice;
+
+    return `📈 שווי התיק אילו היה מושקע ב-S&P 500: ${totalValue.toFixed(2)} דולר`;
 }
 
-/* כפתור החישוב */
-button {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: 0.3s;
-    margin-top: 10px;
-}
-
-button:hover {
-    background-color: #0056b3;
-}
-
-/* תיבת התוצאה */
-.result-card {
-    margin-top: 20px;
-    font-size: 18px;
-    font-weight: bold;
-    color: #333;
-    background: #ffffff;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+// פונקציה להצגת התוצאה
+function displayResult(result) {
+    document.getElementById('result').innerText = result;
 }

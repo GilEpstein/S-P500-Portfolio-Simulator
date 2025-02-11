@@ -48,13 +48,18 @@ function parseCSV(data) {
     }).filter(row => Object.keys(row).length > 1);
 }
 
-// פונקציה לפענוח קובץ `sp500_data.csv`
+// ✅ פונקציה לפענוח קובץ `sp500_data.csv` (תיקון הסרת הכותרת `Date,Close`)
 function parseSP500CSV(data) {
-    const rows = data.split("\n").map(row => row.split(/\s+/));
-    return rows.slice(1).map(row => ({
-        date: row[0], 
-        close: parseFloat(row[1])
-    })).filter(row => row.date && !isNaN(row.close));
+    const rows = data.split("\n").slice(1); // מסיר את הכותרת
+    return rows.map(row => {
+        const columns = row.split(",");
+        if (columns.length < 2) return null; // מוודא שיש לפחות שני ערכים
+
+        return {
+            date: columns[0].trim(),
+            close: parseFloat(columns[1].trim())
+        };
+    }).filter(row => row !== null && !isNaN(row.close)); // מסנן שורות ריקות או שגויות
 }
 
 // פונקציה להשוואה בין תיק המשתמש ל-S&P 500

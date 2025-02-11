@@ -23,6 +23,11 @@ function startCalculation() {
                 const sp500Data = parseSP500CSV(data);
                 console.log("📊 נתוני S&P 500 לאחר פענוח:", sp500Data);
 
+                if (sp500Data.length === 0) {
+                    alert("❌ שגיאה: `sp500_data.csv` לא נטען כראוי!");
+                    return;
+                }
+
                 const result = comparePortfolioWithSP500(transactions, sp500Data);
                 displayResult(result);
                 drawChart(transactions, sp500Data);
@@ -48,12 +53,20 @@ function parseCSV(data) {
     }).filter(row => Object.keys(row).length > 1);
 }
 
-// ✅ פונקציה לפענוח קובץ `sp500_data.csv` (תיקון הסרת הכותרת `Date,Close`)
+// ✅ פונקציה לפענוח `sp500_data.csv` - הסרת הכותרת `Date,Close` ותמיכה בהפרדות שונות
 function parseSP500CSV(data) {
-    const rows = data.split("\n").slice(1); // מסיר את הכותרת
+    const rows = data.split("\n").map(row => row.trim()).filter(row => row.length > 0); // מסיר שורות ריקות
+
+    if (rows.length < 2) {
+        console.error("❌ `sp500_data.csv` מכיל מעט מדי נתונים!");
+        return [];
+    }
+
+    rows.shift(); // מסיר את הכותרת (Date,Close)
+
     return rows.map(row => {
-        const columns = row.split(",");
-        if (columns.length < 2) return null; // מוודא שיש לפחות שני ערכים
+        const columns = row.includes(",") ? row.split(",") : row.split(/\s+/); // תומך גם ברווחים וגם בפסיקים
+        if (columns.length !== 2) return null; // וידוא שיש בדיוק שני עמודות
 
         return {
             date: columns[0].trim(),

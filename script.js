@@ -50,4 +50,38 @@ function parseCSV(data) {
 
 // פונקציה לפענוח קובץ `sp500_data.csv`
 function parseSP500CSV(data) {
-    const rows =
+    const rows = data.split("\n").map(row => row.split(/\s+/)); // מזהה רווחים או טאבים כהפרדה
+    return rows.slice(1).map(row => ({
+        date: row[0], 
+        close: parseFloat(row[1])
+    })).filter(row => row.date && !isNaN(row.close));
+}
+
+// פונקציה להשוואה בין תיק המשתמש ל-S&P 500
+function comparePortfolioWithSP500(transactions, sp500Data) {
+    let sp500Units = 0;
+    let totalValue = 0;
+
+    transactions.forEach(transaction => {
+        const date = transaction["Date"];
+        const action = transaction["Action"];
+        const amount = parseFloat(transaction["Amount"]);
+
+        const spPrice = sp500Data.find(row => row.date === date)?.close;
+        if (!spPrice) return;
+
+        const units = amount / spPrice;
+        if (action.toLowerCase() === "buy") sp500Units += units;
+        if (action.toLowerCase() === "sell") sp500Units -= units;
+    });
+
+    const lastPrice = sp500Data[sp500Data.length - 1]?.close || 0;
+    totalValue = sp500Units * lastPrice;
+
+    return `📈 שווי התיק אילו היה מושקע ב-S&P 500: ${totalValue.toFixed(2)} דולר`;
+}
+
+// פונקציה להצגת התוצאה
+function displayResult(result) {
+    document.getElementById('result').innerText = result;
+}

@@ -4,15 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>השוואת תיק ל-S&P 500</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h1>השוואת תיק השקעות ל-S&P 500</h1>
     <p>העלה קובץ CSV עם נתוני קנייה ומכירה של מניות, ונחשב איך התיק שלך היה נראה אם היית משקיע ב-S&P 500.</p>
-    
-    <input type="file" id="fileInput" accept=".csv">
-    <button onclick="alert('כאן בעתיד יבוצע החישוב')">חשב</button>
 
-    <!-- קישור לקובץ הסקריפט -->
+    <input type="file" id="fileInput" accept=".csv">
+    <button onclick="startCalculation()">חשב</button>
+
+    <div id="result"></div>
+
+    <!-- קישור לקובץ ה-JavaScript -->
     <script src="script.js"></script>
 </body>
 </html>

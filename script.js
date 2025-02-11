@@ -74,7 +74,7 @@ function parseSP500CSV(data) {
     }).filter(row => row !== null && !isNaN(row.close)); // מסנן שורות ריקות או שגויות
 }
 
-// ✅ פונקציה להשוואה בין תיק המשתמש ל-S&P 500
+// ✅ פונקציה להשוואה בין תיק המשתמש ל-S&P 500 (כולל בדיקות דיבוג)
 function comparePortfolioWithSP500(transactions, sp500Data) {
     let sp500Units = 0;
     let totalValue = 0;
@@ -84,6 +84,8 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
         const action = transaction["Action"].toLowerCase();
         const amount = parseFloat(transaction["Amount"]);
 
+        console.log(`🔍 מחפש מחיר סגירה לתאריך ${date}...`);
+
         // בודק אם התאריך קיים בנתונים של S&P 500
         const spPrice = sp500Data.find(row => row.date === date)?.close;
         
@@ -92,14 +94,25 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
             return; // מדלג על העסקה אם אין נתון
         }
 
+        console.log(`✅ נמצא מחיר סגירה ${spPrice} לתאריך ${date}`);
+
         const units = amount / spPrice;
-        if (action === "buy") sp500Units += units;
-        if (action === "sell") sp500Units -= units;
+        if (action === "buy") {
+            sp500Units += units;
+            console.log(`💰 קניית ${units.toFixed(4)} יחידות S&P 500 בתאריך ${date}`);
+        }
+        if (action === "sell") {
+            sp500Units -= units;
+            console.log(`💸 מכירת ${units.toFixed(4)} יחידות S&P 500 בתאריך ${date}`);
+        }
     });
 
     // שימוש במחיר האחרון שיש בנתוני S&P 500 כדי לחשב את הערך הסופי
     const lastPrice = sp500Data[sp500Data.length - 1]?.close || 0;
     totalValue = sp500Units * lastPrice;
+
+    console.log(`📊 סך הכל ${sp500Units.toFixed(4)} יחידות S&P 500.`);
+    console.log(`📈 שווי התיק הסופי לפי מחיר אחרון (${lastPrice}): ${totalValue.toFixed(2)} דולר`);
 
     return `📈 שווי התיק אילו היה מושקע ב-S&P 500: ${totalValue.toFixed(2)} דולר`;
 }

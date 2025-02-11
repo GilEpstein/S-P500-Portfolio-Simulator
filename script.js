@@ -84,14 +84,20 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
         const action = transaction["Action"].toLowerCase();
         const amount = parseFloat(transaction["Amount"]);
 
+        // בודק אם התאריך קיים בנתונים של S&P 500
         const spPrice = sp500Data.find(row => row.date === date)?.close;
-        if (!spPrice) return;
+        
+        if (!spPrice) {
+            console.warn(`⚠️ אין מסחר בתאריך ${date}, העסקה לא בוצעה.`);
+            return; // מדלג על העסקה אם אין נתון
+        }
 
         const units = amount / spPrice;
         if (action === "buy") sp500Units += units;
         if (action === "sell") sp500Units -= units;
     });
 
+    // שימוש במחיר האחרון שיש בנתוני S&P 500 כדי לחשב את הערך הסופי
     const lastPrice = sp500Data[sp500Data.length - 1]?.close || 0;
     totalValue = sp500Units * lastPrice;
 

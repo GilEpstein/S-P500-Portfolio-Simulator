@@ -1,1 +1,1 @@
-# S-P500-Portfolio-Simulator
+# SP500-Portfolio-Simulator

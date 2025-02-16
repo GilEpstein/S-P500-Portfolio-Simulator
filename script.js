@@ -1,3 +1,24 @@
+/**
+ * מחשבון השוואת ביצועי תיק מול S&P 500
+ * ------------------------------------
+ * @פרופ' גיל
+ * 
+ * הנחיות להכנת קובץ הנתונים:
+ * מבנה קובץ CSV הנדרש:
+ * -------------------
+ * Date,Action,Amount
+ * 
+ * הסבר העמודות:
+ * Date   - תאריך העסקה (DD/MM/YYYY)
+ * Action - סוג העסקה (buy/sell)
+ * Amount - סכום בדולרים
+ * 
+ * דוגמה:
+ * Date,Action,Amount
+ * 31/12/2023,buy,1000
+ * 15/01/2024,sell,500
+ */
+
 function startCalculation() {
     const fileInput = document.getElementById('fileInput');
     if (fileInput.files.length === 0) {
@@ -99,8 +120,7 @@ function parseSP500CSV(data) {
 function comparePortfolioWithSP500(transactions, sp500Data) {
     let sp500Units = 0;
     let totalInvested = 0;
-
-    transactions.forEach(transaction => {
+transactions.forEach(transaction => {
         const date = transaction["Date"];
         const action = transaction["Action"].toLowerCase();
         const amount = parseFloat(transaction["Amount"]);
@@ -108,7 +128,8 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
         console.log(`🔍 מחפש מחיר סגירה לתאריך ${date}...`);
 
         const spPrice = sp500Data.find(row => row.date === date)?.close;
-if (!spPrice) {
+        
+        if (!spPrice) {
             console.warn(`⚠️ אין מסחר בתאריך ${date}, העסקה לא בוצעה.`);
             return;
         }

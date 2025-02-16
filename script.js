@@ -1,41 +1,28 @@
-import Papa from 'papaparse';
-import _ from 'lodash';
-
-function startCalculation() {
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput.files.length === 0) {
-        alert("❌ אנא בחר קובץ CSV להעלאה!");
-        return;
-    }
-
-    const file = fileInput.files[0];
-    const reader = new FileReader();
-
-    reader.onload = async function(e) {
-        try {
-            // קריאת נתוני העסקאות
-            const transactions = parseTransactionsFile(e.target.result);
-            console.log("📂 נתוני העסקאות:", transactions);
-
-            // קריאת נתוני S&P 500
-            const sp500Data = await loadSP500Data();
-            console.log("📊 נתוני S&P 500:", sp500Data);
-
-            if (!sp500Data || sp500Data.length === 0) {
-                throw new Error("לא נמצאו נתוני S&P 500");
-            }
-
-            const result = comparePortfolioWithSP500(transactions, sp500Data);
-            displayResult(result);
-        } catch (error) {
-            console.error("❌ שגיאה:", error);
-            alert(`❌ שגיאה: ${error.message}`);
-        }
-    };
-
-    reader.readAsText(file);
+// פונקציות עזר
+function formatNumber(number, decimals = 2) {
+    return new Intl.NumberFormat('he-IL', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    }).format(number);
 }
 
+function formatCurrency(number) {
+    return `$${formatNumber(number)}`;
+}
+
+function formatDate(dateStr) {
+    try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) {
+            throw new Error("תאריך לא תקין");
+        }
+        return date.toISOString().split('T')[0];
+    } catch {
+        return null;
+    }
+}
+
+// פונקציות לטיפול בקבצים
 function parseTransactionsFile(csvContent) {
     const parseResult = Papa.parse(csvContent, {
         header: true,
@@ -45,26 +32,26 @@ function parseTransactionsFile(csvContent) {
     });
 
     if (parseResult.errors.length > 0) {
-        console.error("❌ שגיאות בפענוח הקובץ:", parseResult.errors);
         throw new Error("שגיאה בפענוח קובץ העסקאות");
     }
 
-    return parseResult.data.map(row => ({
-        date: formatDate(row.Date),
-        action: row.Action.toLowerCase(),
-        amount: parseFloat(row.Amount)
-    })).filter(transaction => {
-        // בדיקות תקינות
-        if (!transaction.date || isNaN(transaction.amount)) {
-            console.warn("⚠️ שורה לא תקינה:", transaction);
-            return false;
-        }
-        if (!['buy', 'sell'].includes(transaction.action)) {
-            console.warn("⚠️ פעולה לא מוכרת:", transaction);
-            return false;
-        }
-        return true;
-    });
+    return parseResult.data
+        .map(row => ({
+            date: formatDate(row.Date),
+            action: row.Action.toLowerCase(),
+            amount: parseFloat(row.Amount)
+        }))
+        .filter(transaction => {
+            if (!transaction.date || isNaN(transaction.amount)) {
+                console.warn("⚠️ שורה לא תקינה:", transaction);
+                return false;
+            }
+            if (!['buy', 'sell'].includes(transaction.action)) {
+                console.warn("⚠️ פעולה לא מוכרת:", transaction);
+                return false;
+            }
+            return true;
+        });
 }
 
 async function loadSP500Data() {
@@ -81,89 +68,187 @@ async function loadSP500Data() {
             throw new Error("שגיאה בפענוח נתוני S&P 500");
         }
 
-        return parseResult.data.map(row => ({
-            date: formatDate(row.Date),
-            close: parseFloat(row.Close)
-        })).filter(row => !isNaN(row.close));
+        return parseResult.data
+            .map(row => ({
+                date: formatDate(row.Date),
+                close: parseFloat(row.Close)
+            }))
+            .filter(row => !isNaN(row.close));
     } catch (error) {
-        console.error("❌ שגיאה בטעינת נתוני S&P 500:", error);
         throw new Error("לא ניתן לטעון את נתוני S&P 500");
     }
 }
 
-function formatDate(dateStr) {
-    try {
-        const date = new Date(dateStr);
-        if (isNaN(date.getTime())) {
-            throw new Error("תאריך לא תקין");
-        }
-        return date.toISOString().split('T')[0];
-    } catch {
-        return null;
-    }
-}
-
 function comparePortfolioWithSP500(transactions, sp500Data) {
-    // מיון העסקאות והנתונים לפי תאריך
     const sortedTransactions = _.sortBy(transactions, 'date');
     const sp500ByDate = _.keyBy(sp500Data, 'date');
     
     let sp500Units = 0;
     let totalInvested = 0;
     let errors = [];
+    let transactionCount = 0;
 
-    // עיבוד העסקאות
     sortedTransactions.forEach(transaction => {
         const spData = sp500ByDate[transaction.date];
         
         if (!spData) {
-            errors.push(`אין נתוני S&P 500 לתאריך ${transaction.date}`);
+            errors.push({
+                type: 'warning',
+                message: `אין נתוני S&P 500 לתאריך ${transaction.date}`
+            });
             return;
         }
 
         const units = transaction.amount / spData.close;
-        
-        if (transaction.action === 'buy') {
+if (transaction.action === 'buy') {
             sp500Units += units;
             totalInvested += transaction.amount;
-        } else { // sell
+            transactionCount++;
+        } else {
             if (sp500Units < units) {
-                errors.push(`ניסיון למכור יותר יחידות מהקיים בתאריך ${transaction.date}`);
+                errors.push({
+                    type: 'error',
+                    message: `ניסיון למכור יותר יחידות מהקיים בתאריך ${transaction.date}`
+                });
                 return;
             }
             sp500Units -= units;
             totalInvested -= transaction.amount;
+            transactionCount++;
         }
-
-        console.log(`📊 ${transaction.action === 'buy' ? 'קנייה' : 'מכירה'} של ${units.toFixed(4)} יחידות בתאריך ${transaction.date}`);
     });
 
-    // חישוב הערך הסופי
     const lastPrice = _.last(sp500Data)?.close || 0;
     const finalValue = sp500Units * lastPrice;
-    const returnRate = ((finalValue - totalInvested) / totalInvested * 100).toFixed(2);
+    const returnRate = totalInvested ? ((finalValue - totalInvested) / totalInvested * 100) : 0;
 
-    // הכנת דוח מסכם
-    let report = [
-        `📈 סיכום השוואה מול S&P 500:`,
-        `----------------------------`,
-        `סך היחידות הנוכחי: ${sp500Units.toFixed(4)}`,
-        `סך ההשקעה: $${totalInvested.toFixed(2)}`,
-        `שווי נוכחי: $${finalValue.toFixed(2)}`,
-        `תשואה: ${returnRate}%`
-    ];
+    return {
+        summary: {
+            units: sp500Units,
+            invested: totalInvested,
+            currentValue: finalValue,
+            returnRate: returnRate,
+            lastPrice: lastPrice,
+            transactionCount: transactionCount
+        },
+        errors: errors
+    };
+}
 
-    if (errors.length > 0) {
-        report.push('\n⚠️ אזהרות:', ...errors);
+// פונקציות UI
+function showError(message) {
+    const errorArea = document.getElementById('errorArea');
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.textContent = message;
+    errorArea.classList.remove('hidden');
+}
+
+function hideError() {
+    document.getElementById('errorArea').classList.add('hidden');
+}
+
+function showLoading() {
+    document.getElementById('loadingArea').classList.remove('hidden');
+}
+
+function hideLoading() {
+    document.getElementById('loadingArea').classList.add('hidden');
+}
+
+function updateUI(result) {
+    // מעדכן את אזור התוצאות
+    document.getElementById('resultsArea').classList.remove('hidden');
+    
+    // מעדכן ערכים
+    document.getElementById('currentValue').textContent = formatCurrency(result.summary.currentValue);
+    document.getElementById('totalUnits').textContent = `${formatNumber(result.summary.units, 4)} יחידות`;
+    document.getElementById('returnRate').textContent = `${result.summary.returnRate > 0 ? '+' : ''}${formatNumber(result.summary.returnRate)}%`;
+    document.getElementById('totalInvested').textContent = `השקעה: ${formatCurrency(result.summary.invested)}`;
+    document.getElementById('lastPrice').textContent = formatCurrency(result.summary.lastPrice);
+    document.getElementById('totalTransactions').textContent = result.summary.transactionCount;
+
+    // מעדכן אזהרות
+    const warningsArea = document.getElementById('warningsArea');
+    const warningsList = document.getElementById('warningsList');
+    warningsList.innerHTML = '';
+
+    if (result.errors.length > 0) {
+        warningsArea.classList.remove('hidden');
+        result.errors.forEach(error => {
+            const li = document.createElement('li');
+            li.className = `flex items-start p-3 rounded-lg ${
+                error.type === 'error' 
+                    ? 'bg-red-50 text-red-700' 
+                    : 'bg-yellow-50 text-yellow-700'
+            }`;
+            li.innerHTML = `
+                <svg class="w-5 h-5 ml-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-sm">${error.message}</span>
+            `;
+            warningsList.appendChild(li);
+        });
+    } else {
+        warningsArea.classList.add('hidden');
     }
-
-    return report.join('\n');
 }
 
-function displayResult(result) {
-    const resultElement = document.getElementById('result');
-    resultElement.style.whiteSpace = 'pre-line';
-    resultElement.innerText = result;
+// טיפול בהעלאת קובץ
+async function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // איפוס UI
+    hideError();
+    document.getElementById('resultsArea').classList.add('hidden');
+    document.getElementById('warningsArea').classList.add('hidden');
+    showLoading();
+
+    try {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const transactions = parseTransactionsFile(e.target.result);
+                const sp500Data = await loadSP500Data();
+                const result = comparePortfolioWithSP500(transactions, sp500Data);
+                updateUI(result);
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                hideLoading();
+            }
+        };
+        reader.readAsText(file);
+    } catch (err) {
+        showError(err.message);
+        hideLoading();
+    }
 }
 
-export { startCalculation, displayResult };
+// הגדרת גרירת קבצים
+const dropZone = document.getElementById('dropZone');
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-blue-400', 'bg-blue-100');
+});
+
+dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-blue-400', 'bg-blue-100');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-blue-400', 'bg-blue-100');
+    
+    const dt = e.dataTransfer;
+    const files = dt.files;
+
+    if (files.length) {
+        document.getElementById('fileInput').files = files;
+        handleFileUpload({ target: { files } });
+    }
+});
+        

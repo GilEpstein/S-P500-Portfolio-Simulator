@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מנתח תיק השקעות</title>
-    <!-- ספריות חיצוניות -->
+    <title>מחשבון השוואת תיק השקעות</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash/4.17.21/lodash.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,44 +14,53 @@
             font-family: 'Heebo', sans-serif;
         }
 
-        .drop-zone {
-            transition: all 0.2s ease-in-out;
+        .rtl {
+            direction: rtl;
         }
 
-        .drop-zone:hover {
-            transform: scale(1.01);
-        }
-
-        .stat-card {
-            transition: all 0.3s ease-in-out;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-        }
-
-        .loading-spinner {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .gradient-bg {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        pre {
+            background-color: #f7f7f7;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50">
     <div class="container mx-auto px-4 py-8 max-w-4xl">
         <!-- כותרת ראשית -->
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">השוואת ביצועי תיק השקעות</h1>
             <p class="text-gray-600">השווה את הביצועים שלך מול מדד S&P 500</p>
+            <p class="text-sm text-gray-500 mt-2">@פרופ' גיל</p>
         </div>
 
+        <!-- הנחיות -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">הנחיות להכנת קובץ הנתונים:</h2>
+            <div class="space-y-4">
+                <div>
+                    <h3 class="font-medium mb-2">מבנה קובץ CSV הנדרש:</h3>
+                    <pre class="text-sm">Date,Action,Amount</pre>
+                </div>
+                
+                <div>
+                    <h3 class="font-medium mb-2">הסבר העמודות:</h3>
+                    <ul class="list-disc list-inside space-y-1 text-sm">
+                        <li>Date - תאריך העסקה (DD/MM/YYYY)</li>
+                        <li>Action - סוג העסקה (buy/sell)</li>
+                        <li>Amount - סכום בדולרים</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="font-medium mb-2">דוגמה:</h3>
+                    <pre class="text-sm">Date,Action,Amount
+31/12/2023,buy,1000
+15/01/2024,sell,500</pre>
+                </div>
+            </div>
+        </div>
         <!-- תיבת העלאת קובץ -->
         <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
             <div id="dropZone" class="drop-zone">
@@ -65,9 +73,10 @@
                         <p class="text-sm text-gray-500 text-center">גרור לכאן קובץ CSV או לחץ לבחירה</p>
                     </div>
                 </label>
-                <input id="fileInput" type="file" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
+                <input id="fileInput" type="file" accept=".csv" class="hidden">
             </div>
-<!-- אזור טעינה -->
+
+            <!-- אזור טעינה -->
             <div id="loadingArea" class="hidden text-center py-8">
                 <div class="loading-spinner w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
                 <p class="text-gray-600">מעבד את הנתונים...</p>
@@ -85,10 +94,9 @@
 
             <!-- אזור תוצאות -->
             <div id="resultsArea" class="hidden mt-8 space-y-6">
-                <!-- כרטיסיות סטטיסטיקה -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- שווי נוכחי -->
-                    <div class="stat-card gradient-bg text-white rounded-xl p-6">
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6">
                         <div class="flex items-center justify-between mb-4">
                             <svg class="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -100,7 +108,7 @@
                     </div>
                     
                     <!-- תשואה -->
-                    <div class="stat-card bg-green-500 text-white rounded-xl p-6">
+                    <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6">
                         <div class="flex items-center justify-between mb-4">
                             <svg class="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
@@ -112,7 +120,6 @@
                     </div>
                 </div>
 
-                <!-- פרטים נוספים -->
                 <div class="bg-white rounded-xl p-6 border border-gray-200">
                     <h3 class="text-lg font-semibold mb-4 flex items-center">
                         <svg class="w-5 h-5 ml-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,28 +133,15 @@
                             <p id="lastPrice" class="text-xl font-semibold">$0.00</p>
                         </div>
                         <div class="p-4 bg-gray-50 rounded-lg">
-                            <p class="text-sm text-gray-500 mb-1">סך עסקאות</p>
+                            <p class="text-sm text-gray-500 mb-1">מספר עסקאות</p>
                             <p id="totalTransactions" class="text-xl font-semibold">0</p>
                         </div>
                     </div>
                 </div>
-
-                <!-- אזהרות -->
-                <div id="warningsArea" class="hidden bg-white rounded-xl p-6 border border-gray-200">
-                    <h3 class="text-lg font-semibold mb-4 flex items-center">
-                        <svg class="w-5 h-5 ml-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
-                        הערות חשובות
-                    </h3>
-                    <ul id="warningsList" class="space-y-3">
-                        <!-- כאן יתווספו האזהרות -->
-                    </ul>
-                </div>
             </div>
         </div>
     </div>
-    
+
     <script src="script.js"></script>
 </body>
 </html>

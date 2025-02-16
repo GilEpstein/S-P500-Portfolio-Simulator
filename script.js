@@ -12,11 +12,13 @@ function formatCurrency(number) {
 
 function formatDate(dateStr) {
     try {
-        const date = new Date(dateStr);
+        // מתאים לפורמט DD/MM/YYYY
+        const [day, month, year] = dateStr.split('/').map(num => num.trim());
+        const date = new Date(year, month - 1, day);
         if (isNaN(date.getTime())) {
             throw new Error("תאריך לא תקין");
         }
-        return date.toISOString().split('T')[0];
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     } catch {
         return null;
     }
@@ -64,17 +66,9 @@ function parseTransactionsFile(csvContent) {
 
 async function loadSP500Data() {
     try {
-        const response = await fetch('sp500_data.csv');
-        if (!response.ok) {
-            throw new Error(`שגיאה בטעינת הקובץ: ${response.status} ${response.statusText}`);
-        }
+        const response = await window.fs.readFile('sp500_data.csv', { encoding: 'utf8' });
         
-        const csvContent = await response.text();
-        if (!csvContent) {
-            throw new Error("קובץ הנתונים ריק");
-        }
-
-        const parseResult = Papa.parse(csvContent, {
+        const parseResult = Papa.parse(response, {
             header: true,
             skipEmptyLines: true,
             dynamicTyping: true,
@@ -88,10 +82,10 @@ async function loadSP500Data() {
 
         const data = parseResult.data
             .map(row => ({
-                date: formatDate(row.Date),
+                date: formatDate(row.Date), // מתאים לפורמט שלך - DD/MM/YYYY
                 close: parseFloat(row.Close)
             }))
-            .filter(row => !isNaN(row.close));
+            .filter(row => row.date && !isNaN(row.close));
 
         if (data.length === 0) {
             throw new Error("לא נמצאו נתונים תקינים בקובץ S&P 500");

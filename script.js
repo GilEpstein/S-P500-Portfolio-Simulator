@@ -66,24 +66,34 @@ function parseTransactionsFile(csvContent) {
 
 async function loadSP500Data() {
     try {
-        const response = await window.fs.readFile('sp500_data.csv', { encoding: 'utf8' });
+        // קריאת הקובץ באמצעות fetch
+        const response = await fetch('sp500_data.csv');
+        if (!response.ok) {
+            throw new Error(`שגיאת HTTP! סטטוס: ${response.status}`);
+        }
+        const csvContent = await response.text();
         
-        const parseResult = Papa.parse(response, {
+        console.log("תוכן ה-CSV (100 תווים ראשונים):", csvContent.substring(0, 100));
+
+        const parseResult = Papa.parse(csvContent, {
             header: true,
             skipEmptyLines: true,
-            dynamicTyping: true,
+            dynamicTyping: false,
             transformHeader: header => header.trim()
         });
 
+        console.log("תוצאות הפענוח:", parseResult);
+
         if (parseResult.errors.length > 0) {
-            console.error("שגיאות בפענוח:", parseResult.errors);
+            console.error("שגיאות פענוח:", parseResult.errors);
             throw new Error("שגיאה בפענוח נתוני S&P 500");
         }
 
         const data = parseResult.data
+            .filter(row => row.Date && row.Close)
             .map(row => ({
-                date: formatDate(row.Date), // מתאים לפורמט שלך - DD/MM/YYYY
-                close: parseFloat(row.Close)
+                date: formatDate(row.Date),
+                close: parseFloat(row.Close.toString().replace(',', ''))
             }))
             .filter(row => row.date && !isNaN(row.close));
 
@@ -91,11 +101,13 @@ async function loadSP500Data() {
             throw new Error("לא נמצאו נתונים תקינים בקובץ S&P 500");
         }
 
-        console.log("נטענו", data.length, "רשומות S&P 500");
-        return data;
+        console.log(`נטענו ${data.length} שורות של נתוני S&P 500`);
+        console.log("שורה ראשונה:", data[0]);
+        console.log("שורה אחרונה:", data[data.length - 1]);
 
+        return data;
     } catch (error) {
-        console.error("שגיאה בטעינת SP500:", error);
+        console.error("שגיאה בטעינת נתוני SP500:", error);
         throw new Error("לא ניתן לטעון את נתוני S&P 500 - אנא ודא שהקובץ קיים ותקין");
     }
 }

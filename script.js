@@ -65,51 +65,56 @@ function parseTransactionsFile(csvContent) {
 }
 
 async function loadSP500Data() {
-    try {
-        // קריאת הקובץ באמצעות fetch
-        const response = await fetch('sp500_data.csv');
-        if (!response.ok) {
-            throw new Error(`שגיאת HTTP! סטטוס: ${response.status}`);
-        }
-        const csvContent = await response.text();
-        
-        console.log("תוכן ה-CSV (100 תווים ראשונים):", csvContent.substring(0, 100));
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'sp500_data.csv', true);
+        xhr.onload = function() {
+            try {
+                if (xhr.status === 200) {
+                    const csvContent = xhr.responseText;
+                    console.log("תוכן ה-CSV (100 תווים ראשונים):", csvContent.substring(0, 100));
 
-        const parseResult = Papa.parse(csvContent, {
-            header: true,
-            skipEmptyLines: true,
-            dynamicTyping: false,
-            transformHeader: header => header.trim()
-        });
+                    const parseResult = Papa.parse(csvContent, {
+                        header: true,
+                        skipEmptyLines: true,
+                        dynamicTyping: false,
+                        transformHeader: header => header.trim()
+                    });
 
-        console.log("תוצאות הפענוח:", parseResult);
+                    if (parseResult.errors.length > 0) {
+                        console.error("שגיאות פענוח:", parseResult.errors);
+                        reject(new Error("שגיאה בפענוח נתוני S&P 500"));
+                        return;
+                    }
 
-        if (parseResult.errors.length > 0) {
-            console.error("שגיאות פענוח:", parseResult.errors);
-            throw new Error("שגיאה בפענוח נתוני S&P 500");
-        }
+                    const data = parseResult.data
+                        .filter(row => row.Date && row.Close)
+                        .map(row => ({
+                            date: formatDate(row.Date),
+                            close: parseFloat(row.Close.toString().replace(',', ''))
+                        }))
+                        .filter(row => row.date && !isNaN(row.close));
 
-        const data = parseResult.data
-            .filter(row => row.Date && row.Close)
-            .map(row => ({
-                date: formatDate(row.Date),
-                close: parseFloat(row.Close.toString().replace(',', ''))
-            }))
-            .filter(row => row.date && !isNaN(row.close));
+                    if (data.length === 0) {
+                        reject(new Error("לא נמצאו נתונים תקינים בקובץ S&P 500"));
+                        return;
+                    }
 
-        if (data.length === 0) {
-            throw new Error("לא נמצאו נתונים תקינים בקובץ S&P 500");
-        }
-
-        console.log(`נטענו ${data.length} שורות של נתוני S&P 500`);
-        console.log("שורה ראשונה:", data[0]);
-        console.log("שורה אחרונה:", data[data.length - 1]);
-
-        return data;
-    } catch (error) {
-        console.error("שגיאה בטעינת נתוני SP500:", error);
-        throw new Error("לא ניתן לטעון את נתוני S&P 500 - אנא ודא שהקובץ קיים ותקין");
-    }
+                    console.log(`נטענו ${data.length} שורות של נתוני S&P 500`);
+                    resolve(data);
+                } else {
+                    reject(new Error(`שגיאה בטעינת הקובץ: ${xhr.status}`));
+                }
+            } catch (error) {
+                console.error("שגיאה בעיבוד הנתונים:", error);
+                reject(new Error("שגיאה בעיבוד נתוני S&P 500"));
+            }
+        };
+        xhr.onerror = function() {
+            reject(new Error("לא ניתן לטעון את נתוני S&P 500 - אנא ודא שהקובץ קיים ותקין"));
+        };
+        xhr.send();
+    });
 }
 
 function comparePortfolioWithSP500(transactions, sp500Data) {
@@ -120,7 +125,7 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
     let totalInvested = 0;
     let errors = [];
     let transactionCount = 0;
-    sortedTransactions.forEach(transaction => {
+sortedTransactions.forEach(transaction => {
         const spData = sp500ByDate[transaction.date];
         
         if (!spData) {

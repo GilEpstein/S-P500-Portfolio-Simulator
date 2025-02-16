@@ -32,10 +32,11 @@ function parseTransactionsFile(csvContent) {
     });
 
     if (parseResult.errors.length > 0) {
+        console.error("שגיאות בפענוח:", parseResult.errors);
         throw new Error("שגיאה בפענוח קובץ העסקאות");
     }
 
-    return parseResult.data
+    const transactions = parseResult.data
         .map(row => ({
             date: formatDate(row.Date),
             action: row.Action.toLowerCase(),
@@ -52,12 +53,28 @@ function parseTransactionsFile(csvContent) {
             }
             return true;
         });
+
+    if (transactions.length === 0) {
+        throw new Error("לא נמצאו עסקאות תקינות בקובץ");
+    }
+
+    console.log("נמצאו", transactions.length, "עסקאות תקינות");
+    return transactions;
 }
 
 async function loadSP500Data() {
     try {
-        const response = await window.fs.readFile('sp500_data.csv', { encoding: 'utf8' });
-        const parseResult = Papa.parse(response, {
+        const response = await fetch('sp500_data.csv');
+        if (!response.ok) {
+            throw new Error(`שגיאה בטעינת הקובץ: ${response.status} ${response.statusText}`);
+        }
+        
+        const csvContent = await response.text();
+        if (!csvContent) {
+            throw new Error("קובץ הנתונים ריק");
+        }
+
+        const parseResult = Papa.parse(csvContent, {
             header: true,
             skipEmptyLines: true,
             dynamicTyping: true,
@@ -65,17 +82,27 @@ async function loadSP500Data() {
         });
 
         if (parseResult.errors.length > 0) {
+            console.error("שגיאות בפענוח:", parseResult.errors);
             throw new Error("שגיאה בפענוח נתוני S&P 500");
         }
 
-        return parseResult.data
+        const data = parseResult.data
             .map(row => ({
                 date: formatDate(row.Date),
                 close: parseFloat(row.Close)
             }))
             .filter(row => !isNaN(row.close));
+
+        if (data.length === 0) {
+            throw new Error("לא נמצאו נתונים תקינים בקובץ S&P 500");
+        }
+
+        console.log("נטענו", data.length, "רשומות S&P 500");
+        return data;
+
     } catch (error) {
-        throw new Error("לא ניתן לטעון את נתוני S&P 500");
+        console.error("שגיאה בטעינת SP500:", error);
+        throw new Error("לא ניתן לטעון את נתוני S&P 500 - אנא ודא שהקובץ קיים ותקין");
     }
 }
 
@@ -87,7 +114,6 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
     let totalInvested = 0;
     let errors = [];
     let transactionCount = 0;
-
     sortedTransactions.forEach(transaction => {
         const spData = sp500ByDate[transaction.date];
         
@@ -100,7 +126,8 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
         }
 
         const units = transaction.amount / spData.close;
-if (transaction.action === 'buy') {
+        
+        if (transaction.action === 'buy') {
             sp500Units += units;
             totalInvested += transaction.amount;
             transactionCount++;
@@ -214,6 +241,7 @@ async function handleFileUpload(event) {
                 const result = comparePortfolioWithSP500(transactions, sp500Data);
                 updateUI(result);
             } catch (err) {
+                console.error("שגיאה בעיבוד הקובץ:", err);
                 showError(err.message);
             } finally {
                 hideLoading();
@@ -221,6 +249,7 @@ async function handleFileUpload(event) {
         };
         reader.readAsText(file);
     } catch (err) {
+        console.error("שגיאה בהעלאת הקובץ:", err);
         showError(err.message);
         hideLoading();
     }
@@ -251,4 +280,3 @@ dropZone.addEventListener('drop', (e) => {
         handleFileUpload({ target: { files } });
     }
 });
-        

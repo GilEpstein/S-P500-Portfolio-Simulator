@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מחשבון השוואת תיק השקעות</title>
-    <!-- ספריות חיצוניות -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash/4.17.21/lodash.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -51,23 +50,23 @@
             <div class="space-y-4">
                 <div>
                     <h3 class="font-medium mb-2">שורת כותרת (חובה):</h3>
-                    <div class="code-display">Date,Action,Amount</div>
+                    <div class="code-display">תאריך,פעולה,סכום</div>
                 </div>
                 
                 <div>
                     <h3 class="font-medium mb-2">הסבר העמודות:</h3>
                     <ul class="list-disc list-inside space-y-1 text-sm pr-4">
-                        <li><strong>Date</strong> - תאריך העסקה בפורמט DD/MM/YYYY</li>
-                        <li><strong>Action</strong> - סוג העסקה: buy או sell</li>
-                        <li><strong>Amount</strong> - סכום בדולרים (מספרים בלבד)</li>
+                        <li><strong>תאריך</strong> - תאריך העסקה בפורמט DD/MM/YYYY</li>
+                        <li><strong>פעולה</strong> - סוג העסקה: קניה או מכירה</li>
+                        <li><strong>סכום</strong> - סכום בדולרים (מספרים בלבד)</li>
                     </ul>
                 </div>
 
                 <div>
                     <h3 class="font-medium mb-2">דוגמה לקובץ מלא:</h3>
-                    <div class="code-display">Date,Action,Amount
-31/12/2023,buy,1000
-15/01/2024,sell,500</div>
+                    <pre class="code-display">תאריך,פעולה,סכום
+31/12/2023,קניה,1000
+15/01/2024,מכירה,500</pre>
                 </div>
 
                 <div class="mt-6">
@@ -82,7 +81,7 @@
                 </div>
             </div>
         </div>
-<!-- תיבת העלאת קובץ -->
+      <!-- תיבת העלאת קובץ -->
         <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
             <div id="dropZone" class="drop-zone">
                 <label for="fileInput" class="block w-full cursor-pointer">
@@ -165,4 +164,4 @@
 
     <script src="script.js"></script>
 </body>
-</html>        
+</html>  

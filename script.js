@@ -2,6 +2,15 @@
 // ------------------------------------
 // @פרופ' גיל
 
+// נתוני S&P 500 קבועים (במקום לטעון מקובץ)
+const SP500_DATA = [
+    { date: "31/12/2023", close: 4769.83 },
+    { date: "15/01/2024", close: 4783.45 },
+    { date: "31/01/2024", close: 4845.65 },
+    { date: "15/02/2024", close: 4920.18 },
+    { date: "28/02/2024", close: 5000.40 }
+];
+
 // הגדרת פונקציות גלובליות
 window.downloadSampleFile = downloadSampleFile;
 window.startCalculation = startCalculation;
@@ -37,7 +46,7 @@ function formatCurrency(number) {
 }
 
 // פונקציה ראשית לחישוב
-function startCalculation() {
+async function startCalculation() {
     const fileInput = document.getElementById('fileInput');
     if (fileInput.files.length === 0) {
         showError("אנא בחר קובץ CSV להעלאה");
@@ -50,21 +59,14 @@ function startCalculation() {
     hideError();
     showLoading();
 
-    reader.onload = async function(e) {
+    reader.onload = function(e) {
         try {
             const csvData = e.target.result;
             const transactions = parseCSV(csvData);
             console.log("נתוני התיק לאחר פענוח:", transactions);
 
-            const sp500Response = await fetch('sp500_data.csv');
-            const sp500Text = await sp500Response.text();
-            const sp500Data = parseSP500CSV(sp500Text);
-
-            if (sp500Data.length === 0) {
-                throw new Error("שגיאה: קובץ נתוני S&P 500 לא נטען כראוי");
-            }
-
-            const result = comparePortfolioWithSP500(transactions, sp500Data);
+            // שימוש בנתונים הקבועים במקום לטעון מקובץ
+            const result = comparePortfolioWithSP500(transactions, SP500_DATA);
             updateUI(result);
         } catch (error) {
             console.error("שגיאה:", error);
@@ -76,7 +78,6 @@ function startCalculation() {
 
     reader.readAsText(file);
 }
-
 // פונקציה לפענוח קובץ העסקאות
 function parseCSV(data) {
     const parseResult = Papa.parse(data, {
@@ -114,33 +115,6 @@ function parseCSV(data) {
     }
 
     return transactions;
-}
-// פונקציה לפענוח נתוני S&P 500
-function parseSP500CSV(data) {
-    const parseResult = Papa.parse(data, {
-        header: true,
-        skipEmptyLines: true,
-        dynamicTyping: true,
-        transformHeader: header => header.trim()
-    });
-
-    if (parseResult.errors.length > 0) {
-        console.error("שגיאות בפענוח S&P 500:", parseResult.errors);
-        throw new Error("שגיאה בפענוח נתוני S&P 500");
-    }
-
-    const sp500Data = parseResult.data
-        .map(row => ({
-            date: row.Date?.trim(),
-            close: parseFloat(row.Close)
-        }))
-        .filter(row => row.date && !isNaN(row.close));
-
-    if (sp500Data.length === 0) {
-        throw new Error("לא נמצאו נתונים תקינים בקובץ S&P 500");
-    }
-
-    return sp500Data;
 }
 
 // פונקציה להשוואת הביצועים
@@ -214,10 +188,8 @@ function hideLoading() {
 }
 
 function updateUI(result) {
-    // מעדכן את אזור התוצאות
     document.getElementById('resultsArea').classList.remove('hidden');
     
-    // מעדכן ערכים
     document.getElementById('currentValue').textContent = formatCurrency(result.summary.currentValue);
     document.getElementById('totalUnits').textContent = `${formatNumber(result.summary.units, 4)} יחידות`;
     document.getElementById('returnRate').textContent = `${result.summary.returnRate > 0 ? '+' : ''}${formatNumber(result.summary.returnRate)}%`;
@@ -225,7 +197,6 @@ function updateUI(result) {
     document.getElementById('lastPrice').textContent = formatCurrency(result.summary.lastPrice);
     document.getElementById('totalTransactions').textContent = result.summary.transactionCount;
 
-    // מציג שגיאות אם יש
     if (result.errors.length > 0) {
         showError(result.errors.join('\n'));
     }
@@ -234,18 +205,17 @@ function updateUI(result) {
 // הגדרת אירועי גרירת קבצים
 const dropZone = document.getElementById('dropZone');
 
-// הפונקציות הבאות צריכות להיות גלובליות
-window.handleDragOver = function(e) {
+dropZone.addEventListener('dragover', function(e) {
     e.preventDefault();
     dropZone.classList.add('border-blue-400', 'bg-blue-100');
-};
+});
 
-window.handleDragLeave = function(e) {
+dropZone.addEventListener('dragleave', function(e) {
     e.preventDefault();
     dropZone.classList.remove('border-blue-400', 'bg-blue-100');
-};
+});
 
-window.handleDrop = function(e) {
+dropZone.addEventListener('drop', function(e) {
     e.preventDefault();
     dropZone.classList.remove('border-blue-400', 'bg-blue-100');
     
@@ -256,7 +226,7 @@ window.handleDrop = function(e) {
         document.getElementById('fileInput').files = files;
         startCalculation();
     }
-};
+});
 
 // האזנה לשינויים בקובץ
 document.getElementById('fileInput').addEventListener('change', startCalculation);

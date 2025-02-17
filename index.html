@@ -14,17 +14,6 @@
             font-family: 'Heebo', sans-serif;
         }
 
-        .code-display {
-            font-family: monospace;
-            background-color: #f7f7f7;
-            padding: 0.75rem;
-            border-radius: 0.375rem;
-            border: 1px solid #e5e7eb;
-            margin: 0.5rem 0;
-            direction: rtl;
-            text-align: right;
-        }
-
         .loading-spinner {
             animation: spin 1s linear infinite;
         }
@@ -37,53 +26,33 @@
 </head>
 <body class="bg-gray-50">
     <div class="container mx-auto px-4 py-8 max-w-4xl">
-        <!-- כותרת ראשית -->
+        <!-- כותרת ראשית והסבר -->
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">השוואת ביצועי תיק השקעות</h1>
-            <p class="text-gray-600">השווה את הביצועים שלך מול מדד S&P 500</p>
-            <p class="text-sm text-gray-500 mt-2">@פרופ' גיל</p>
-        </div>
-
-        <!-- הנחיות -->
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-            <h2 class="text-xl font-semibold mb-4">הנחיות להכנת קובץ הנתונים:</h2>
-            <div class="space-y-4">
-                <div>
-                    <h3 class="font-medium mb-2">הסבר המבנה:</h3>
-                    <ul class="list-disc list-inside space-y-1 text-sm pr-4">
-                        <li><strong>שורת כותרת (חובה):</strong><br/>
-                            <div class="code-display">תאריך, פעולה, סכום</div>
-                        </li>
-                        <li class="mt-4"><strong>הסבר העמודות:</strong>
-                            <ul class="list-disc list-inside space-y-1 text-sm pr-8 mt-2">
-                                <li>תאריך - בפורמט DD/MM/YYYY</li>
-                                <li>פעולה - קניה או מכירה</li>
-                                <li>סכום - בדולרים (מספרים בלבד)</li>
-                            </ul>
-                        </li>
-                        <li class="mt-4"><strong>דוגמה לקובץ מלא:</strong><br/>
-                            <div class="code-display">תאריך, פעולה, סכום
-קניה, 1000, 31/12/2023
-מכירה, 500, 15/01/2024</div>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="mt-6">
-                    <button onclick="window.downloadSampleCSV()" 
-                            class="flex items-center mx-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm">
-                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                        </svg>
-                        הורד קובץ CSV לדוגמה
-                    </button>
-                </div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">השוואת ביצועי תיק השקעות</h1>
+            <div class="max-w-2xl mx-auto">
+                <p class="text-gray-600 mb-4">
+                    אפליקציה זו מאפשרת לך להשוות את ביצועי תיק ההשקעות שלך מול מדד S&P 500.
+                    באמצעות השוואה זו תוכל לדעת האם היית מרוויח יותר אילו היית משקיע את אותם הסכומים במדד.
+                </p>
+                <p class="text-sm text-gray-500">@פרופ' גיל</p>
             </div>
         </div>
-<!-- תיבת העלאת קובץ -->
-        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <div id="dropZone" class="drop-zone">
+
+        <!-- הנחיות והורדה -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div class="text-center mb-6">
+                <p class="text-gray-600 mb-4">להורדת קובץ דוגמה המציג את מבנה הנתונים הנדרש:</p>
+                <button onclick="downloadSampleFile()" 
+                        class="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm">
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    הורד קובץ CSV לדוגמה
+                </button>
+            </div>
+<!-- אזור העלאת קובץ -->
+            <div id="dropZone" class="drop-zone mt-6">
                 <label for="fileInput" class="block w-full cursor-pointer">
                     <div class="flex flex-col items-center p-8 border-2 border-dashed border-blue-200 rounded-lg hover:border-blue-400 bg-blue-50 hover:bg-blue-100">
                         <svg class="w-16 h-16 mb-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

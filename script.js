@@ -46,33 +46,28 @@ function startCalculation() {
     hideError();
     showLoading();
 
-    reader.onload = function(e) {
-        const csvData = e.target.result;
-        const transactions = parseCSV(csvData);
+    reader.onload = async function(e) {
+        try {
+            const csvData = e.target.result;
+            const transactions = parseCSV(csvData);
+            console.log("נתוני התיק לאחר פענוח:", transactions);
 
-        console.log("נתוני התיק לאחר פענוח:", transactions);
+            const sp500Response = await fetch('sp500_data.csv');
+            const sp500Text = await sp500Response.text();
+            const sp500Data = parseSP500CSV(sp500Text);
 
-        fetch('sp500_data.csv')
-            .then(response => response.text())
-            .then(data => {
-                console.log("נתוני S&P 500 התקבלו");
-                const sp500Data = parseSP500CSV(data);
+            if (sp500Data.length === 0) {
+                throw new Error("שגיאה: קובץ נתוני S&P 500 לא נטען כראוי");
+            }
 
-                if (sp500Data.length === 0) {
-                    showError("שגיאה: קובץ נתוני S&P 500 לא נטען כראוי");
-                    return;
-                }
-
-                const result = comparePortfolioWithSP500(transactions, sp500Data);
-                updateUI(result);
-            })
-            .catch(error => {
-                console.error("שגיאה בטעינת נתוני S&P 500:", error);
-                showError("לא ניתן לטעון את נתוני S&P 500");
-            })
-            .finally(() => {
-                hideLoading();
-            });
+            const result = comparePortfolioWithSP500(transactions, sp500Data);
+            updateUI(result);
+        } catch (error) {
+            console.error("שגיאה:", error);
+            showError(error.message);
+        } finally {
+            hideLoading();
+        }
     };
 
     reader.readAsText(file);
@@ -118,24 +113,30 @@ function parseCSV(data) {
 }
 // פונקציה לפענוח נתוני S&P 500
 function parseSP500CSV(data) {
-    const rows = data.split("\n").map(row => row.trim()).filter(row => row.length > 0);
+    const parseResult = Papa.parse(data, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: true,
+        transformHeader: header => header.trim()
+    });
 
-    if (rows.length < 2) {
-        console.error("קובץ נתוני S&P 500 מכיל מעט מדי נתונים");
-        return [];
+    if (parseResult.errors.length > 0) {
+        console.error("שגיאות בפענוח נתוני S&P 500:", parseResult.errors);
+        throw new Error("שגיאה בפענוח נתוני S&P 500");
     }
 
-    rows.shift(); // מסיר את שורת הכותרת
+    const sp500Data = parseResult.data
+        .map(row => ({
+            date: row.Date,
+            close: parseFloat(row.Close)
+        }))
+        .filter(row => row.date && !isNaN(row.close));
 
-    return rows.map(row => {
-        const columns = row.split(",");
-        if (columns.length !== 2) return null;
+    if (sp500Data.length === 0) {
+        throw new Error("לא נמצאו נתונים תקינים בקובץ S&P 500");
+    }
 
-        return {
-            date: columns[0].trim(),
-            close: parseFloat(columns[1].trim())
-        };
-    }).filter(row => row !== null && !isNaN(row.close));
+    return sp500Data;
 }
 
 // פונקציה להשוואת הביצועים
@@ -143,30 +144,33 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
     let sp500Units = 0;
     let totalInvested = 0;
 
-    transactions.forEach(transaction => {
-        const date = transaction.date;
-        const action = transaction.action;
-        const amount = transaction.amount;
+    // מיון העסקאות לפי תאריך
+    const sortedTransactions = _.sortBy(transactions, 'date');
+    const sp500ByDate = _.keyBy(sp500Data, 'date');
 
-        const spData = sp500Data.find(row => row.date === date);
+    sortedTransactions.forEach(transaction => {
+        const spData = sp500ByDate[transaction.date];
         if (!spData) {
-            console.warn(`אין נתוני מסחר לתאריך ${date}`);
+            console.warn(`אין נתוני מסחר לתאריך ${transaction.date}`);
             return;
         }
 
-        const spPrice = spData.close;
-        const units = amount / spPrice;
+        const units = transaction.amount / spData.close;
 
-        if (action === "קניה") {
+        if (transaction.action === "קניה") {
             sp500Units += units;
-            totalInvested += amount;
-        } else if (action === "מכירה") {
+            totalInvested += transaction.amount;
+        } else if (transaction.action === "מכירה") {
+            if (sp500Units < units) {
+                console.warn(`ניסיון למכור יותר יחידות מהקיים בתאריך ${transaction.date}`);
+                return;
+            }
             sp500Units -= units;
-            totalInvested -= amount;
+            totalInvested -= transaction.amount;
         }
     });
 
-    const lastPrice = sp500Data[sp500Data.length - 1]?.close || 0;
+    const lastPrice = _.last(sp500Data)?.close || 0;
     const finalValue = sp500Units * lastPrice;
     const returnRate = totalInvested !== 0 ? ((finalValue - totalInvested) / totalInvested * 100) : 0;
 
@@ -177,9 +181,8 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
             currentValue: finalValue,
             returnRate: returnRate,
             lastPrice: lastPrice,
-            transactionCount: transactions.length
-        },
-        errors: []
+            transactionCount: sortedTransactions.length
+        }
     };
 }
 
@@ -204,10 +207,8 @@ function hideLoading() {
 }
 
 function updateUI(result) {
-    // מעדכן את אזור התוצאות
     document.getElementById('resultsArea').classList.remove('hidden');
     
-    // מעדכן ערכים
     document.getElementById('currentValue').textContent = formatCurrency(result.summary.currentValue);
     document.getElementById('totalUnits').textContent = `${formatNumber(result.summary.units, 4)} יחידות`;
     document.getElementById('returnRate').textContent = `${result.summary.returnRate > 0 ? '+' : ''}${formatNumber(result.summary.returnRate)}%`;
@@ -219,6 +220,7 @@ function updateUI(result) {
 // אירועי גרירת קבצים
 const dropZone = document.getElementById('dropZone');
 
+// מניעת ברירת המחדל של הדפדפן לגרירת קבצים
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropZone.classList.add('border-blue-400', 'bg-blue-100');

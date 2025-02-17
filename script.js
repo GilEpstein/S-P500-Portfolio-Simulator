@@ -2,14 +2,24 @@
 // ------------------------------------
 // @פרופ' גיל
 
-// נתוני S&P 500 קבועים
-const SP500_DATA = [
-    { date: "31/12/2024", close: 4769.83 },
-    { date: "15/01/2025", close: 4783.45 },
-    { date: "31/01/2025", close: 4845.65 },
-    { date: "15/02/2025", close: 4920.18 },
-    { date: "16/02/2025", close: 4955.40 }
-];
+// קריאת הנתונים מהקובץ
+async function loadSP500Data() {
+    try {
+        const response = await window.fs.readFile('1929 2025.csv', { encoding: 'utf8' });
+        const result = Papa.parse(response, {
+            header: true,
+            dynamicTyping: true,
+            skipEmptyLines: true
+        });
+        return result.data.map(row => ({
+            date: row.Date,
+            close: row.Close
+        }));
+    } catch (error) {
+        console.error("Error loading SP500 data:", error);
+        return [];
+    }
+}
 
 // הגדרת פונקציות גלובליות
 window.downloadSampleFile = downloadSampleFile;
@@ -18,8 +28,8 @@ window.startCalculation = startCalculation;
 // פונקציית הורדת קובץ דוגמה
 function downloadSampleFile() {
     const csvContent = `תאריך,פעולה,סכום
-31/12/2024,קניה,1000
-15/01/2025,מכירה,500`;
+31/12/2023,קניה,1000
+27/01/2025,מכירה,500`;
 
     // יצירת קובץ עם תמיכה בעברית
     const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -59,27 +69,39 @@ async function startCalculation() {
     hideError();
     showLoading();
 
-    reader.onload = function(e) {
-        try {
-            const csvData = e.target.result;
-            console.log("CSV Data:", csvData);
-            
-            const transactions = parseCSV(csvData);
-            console.log("Parsed Transactions:", transactions);
-            
-            const result = comparePortfolioWithSP500(transactions, SP500_DATA);
-            console.log("Calculation Result:", result);
-            
-            updateUI(result);
-        } catch (error) {
-            console.error("שגיאה:", error);
-            showError(error.message);
-        } finally {
-            hideLoading();
+    try {
+        const sp500Data = await loadSP500Data();
+        
+        if (sp500Data.length === 0) {
+            throw new Error("לא ניתן לטעון את נתוני S&P 500");
         }
-    };
 
-    reader.readAsText(file);
+        reader.onload = function(e) {
+            try {
+                const csvData = e.target.result;
+                console.log("CSV Data:", csvData);
+                
+                const transactions = parseCSV(csvData);
+                console.log("Parsed Transactions:", transactions);
+                
+                const result = comparePortfolioWithSP500(transactions, sp500Data);
+                console.log("Calculation Result:", result);
+                
+                updateUI(result);
+            } catch (error) {
+                console.error("שגיאה:", error);
+                showError(error.message);
+            } finally {
+                hideLoading();
+            }
+        };
+
+        reader.readAsText(file);
+    } catch (error) {
+        console.error("שגיאה בטעינת נתוני S&P 500:", error);
+        showError(error.message);
+        hideLoading();
+    }
 }
 // פונקציה לפענוח קובץ העסקאות
 function parseCSV(data) {

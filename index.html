@@ -18,11 +18,24 @@
             direction: rtl;
         }
 
-        pre {
+        .code-display {
+            font-family: monospace;
             background-color: #f7f7f7;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #e5e7eb;
+            margin: 0.5rem 0;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -40,28 +53,28 @@
             <h2 class="text-xl font-semibold mb-4">הנחיות להכנת קובץ הנתונים:</h2>
             <div class="space-y-4">
                 <div>
-                    <h3 class="font-medium mb-2">מבנה קובץ CSV הנדרש:</h3>
-                    <pre class="text-sm">Date,Action,Amount</pre>
+                    <h3 class="font-medium mb-2">שורת כותרת (חובה):</h3>
+                    <div class="code-display">Date,Action,Amount</div>
                 </div>
                 
                 <div>
                     <h3 class="font-medium mb-2">הסבר העמודות:</h3>
-                    <ul class="list-disc list-inside space-y-1 text-sm">
-                        <li>Date - תאריך העסקה (DD/MM/YYYY)</li>
-                        <li>Action - סוג העסקה (buy/sell)</li>
-                        <li>Amount - סכום בדולרים</li>
+                    <ul class="list-disc list-inside space-y-1 text-sm pr-4">
+                        <li><strong>Date</strong> - תאריך העסקה בפורמט DD/MM/YYYY</li>
+                        <li><strong>Action</strong> - סוג העסקה: buy או sell</li>
+                        <li><strong>Amount</strong> - סכום בדולרים (מספרים בלבד)</li>
                     </ul>
                 </div>
 
                 <div>
-                    <h3 class="font-medium mb-2">דוגמה:</h3>
-                    <pre class="text-sm">Date,Action,Amount
+                    <h3 class="font-medium mb-2">דוגמה לקובץ מלא:</h3>
+                    <div class="code-display">Date,Action,Amount
 31/12/2023,buy,1000
-15/01/2024,sell,500</pre>
+15/01/2024,sell,500</div>
                 </div>
             </div>
         </div>
-        <!-- תיבת העלאת קובץ -->
+<!-- תיבת העלאת קובץ -->
         <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
             <div id="dropZone" class="drop-zone">
                 <label for="fileInput" class="block w-full cursor-pointer">

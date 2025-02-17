@@ -4,11 +4,11 @@
 
 // נתוני S&P 500 קבועים
 const SP500_DATA = [
-    { date: "31/12/2023", close: 4769.83 },
-    { date: "15/01/2024", close: 4783.45 },
-    { date: "31/01/2024", close: 4845.65 },
-    { date: "15/02/2024", close: 4920.18 },
-    { date: "16/02/2024", close: 4955.40 }
+    { date: "31/12/2024", close: 4769.83 },
+    { date: "15/01/2025", close: 4783.45 },
+    { date: "31/01/2025", close: 4845.65 },
+    { date: "15/02/2025", close: 4920.18 },
+    { date: "16/02/2025", close: 4955.40 }
 ];
 
 // הגדרת פונקציות גלובליות
@@ -18,8 +18,8 @@ window.startCalculation = startCalculation;
 // פונקציית הורדת קובץ דוגמה
 function downloadSampleFile() {
     const csvContent = `תאריך,פעולה,סכום
-31/12/2023,קניה,1000
-15/01/2024,מכירה,500`;
+31/12/2024,קניה,1000
+15/01/2025,מכירה,500`;
 
     // יצירת קובץ עם תמיכה בעברית
     const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });

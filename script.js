@@ -2,6 +2,10 @@
 // ------------------------------------
 // @פרופ' גיל
 
+// הגדרת פונקציות גלובליות
+window.downloadSampleFile = downloadSampleFile;
+window.startCalculation = startCalculation;
+
 // פונקציית הורדת קובץ דוגמה
 function downloadSampleFile() {
     const csvContent = `תאריך,פעולה,סכום
@@ -121,13 +125,13 @@ function parseSP500CSV(data) {
     });
 
     if (parseResult.errors.length > 0) {
-        console.error("שגיאות בפענוח נתוני S&P 500:", parseResult.errors);
+        console.error("שגיאות בפענוח S&P 500:", parseResult.errors);
         throw new Error("שגיאה בפענוח נתוני S&P 500");
     }
 
     const sp500Data = parseResult.data
         .map(row => ({
-            date: row.Date,
+            date: row.Date?.trim(),
             close: parseFloat(row.Close)
         }))
         .filter(row => row.date && !isNaN(row.close));
@@ -143,34 +147,36 @@ function parseSP500CSV(data) {
 function comparePortfolioWithSP500(transactions, sp500Data) {
     let sp500Units = 0;
     let totalInvested = 0;
+    let errors = [];
 
-    // מיון העסקאות לפי תאריך
-    const sortedTransactions = _.sortBy(transactions, 'date');
-    const sp500ByDate = _.keyBy(sp500Data, 'date');
+    transactions.forEach(transaction => {
+        const date = transaction.date;
+        const action = transaction.action;
+        const amount = transaction.amount;
 
-    sortedTransactions.forEach(transaction => {
-        const spData = sp500ByDate[transaction.date];
+        const spData = sp500Data.find(row => row.date === date);
         if (!spData) {
-            console.warn(`אין נתוני מסחר לתאריך ${transaction.date}`);
+            errors.push(`אין נתוני מסחר לתאריך ${date}`);
             return;
         }
 
-        const units = transaction.amount / spData.close;
+        const spPrice = spData.close;
+        const units = amount / spPrice;
 
-        if (transaction.action === "קניה") {
+        if (action === "קניה") {
             sp500Units += units;
-            totalInvested += transaction.amount;
-        } else if (transaction.action === "מכירה") {
+            totalInvested += amount;
+        } else if (action === "מכירה") {
             if (sp500Units < units) {
-                console.warn(`ניסיון למכור יותר יחידות מהקיים בתאריך ${transaction.date}`);
+                errors.push(`ניסיון למכור יותר יחידות מהקיים בתאריך ${date}`);
                 return;
             }
             sp500Units -= units;
-            totalInvested -= transaction.amount;
+            totalInvested -= amount;
         }
     });
 
-    const lastPrice = _.last(sp500Data)?.close || 0;
+    const lastPrice = sp500Data[sp500Data.length - 1]?.close || 0;
     const finalValue = sp500Units * lastPrice;
     const returnRate = totalInvested !== 0 ? ((finalValue - totalInvested) / totalInvested * 100) : 0;
 
@@ -181,8 +187,9 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
             currentValue: finalValue,
             returnRate: returnRate,
             lastPrice: lastPrice,
-            transactionCount: sortedTransactions.length
-        }
+            transactionCount: transactions.length
+        },
+        errors: errors
     };
 }
 
@@ -207,31 +214,38 @@ function hideLoading() {
 }
 
 function updateUI(result) {
+    // מעדכן את אזור התוצאות
     document.getElementById('resultsArea').classList.remove('hidden');
     
+    // מעדכן ערכים
     document.getElementById('currentValue').textContent = formatCurrency(result.summary.currentValue);
     document.getElementById('totalUnits').textContent = `${formatNumber(result.summary.units, 4)} יחידות`;
     document.getElementById('returnRate').textContent = `${result.summary.returnRate > 0 ? '+' : ''}${formatNumber(result.summary.returnRate)}%`;
     document.getElementById('totalInvested').textContent = `השקעה: ${formatCurrency(result.summary.invested)}`;
     document.getElementById('lastPrice').textContent = formatCurrency(result.summary.lastPrice);
     document.getElementById('totalTransactions').textContent = result.summary.transactionCount;
+
+    // מציג שגיאות אם יש
+    if (result.errors.length > 0) {
+        showError(result.errors.join('\n'));
+    }
 }
 
-// אירועי גרירת קבצים
+// הגדרת אירועי גרירת קבצים
 const dropZone = document.getElementById('dropZone');
 
-// מניעת ברירת המחדל של הדפדפן לגרירת קבצים
-dropZone.addEventListener('dragover', (e) => {
+// הפונקציות הבאות צריכות להיות גלובליות
+window.handleDragOver = function(e) {
     e.preventDefault();
     dropZone.classList.add('border-blue-400', 'bg-blue-100');
-});
+};
 
-dropZone.addEventListener('dragleave', (e) => {
+window.handleDragLeave = function(e) {
     e.preventDefault();
     dropZone.classList.remove('border-blue-400', 'bg-blue-100');
-});
+};
 
-dropZone.addEventListener('drop', (e) => {
+window.handleDrop = function(e) {
     e.preventDefault();
     dropZone.classList.remove('border-blue-400', 'bg-blue-100');
     
@@ -242,7 +256,7 @@ dropZone.addEventListener('drop', (e) => {
         document.getElementById('fileInput').files = files;
         startCalculation();
     }
-});
+};
 
 // האזנה לשינויים בקובץ
 document.getElementById('fileInput').addEventListener('change', startCalculation);

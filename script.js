@@ -8,7 +8,7 @@ const SP500_DATA = [
     { date: "15/01/2024", close: 4783.45 },
     { date: "31/01/2024", close: 4845.65 },
     { date: "15/02/2024", close: 4920.18 },
-    { date: "16/02/2024", close: 5000.40 }
+    { date: "16/02/2024", close: 4955.40 }
 ];
 
 // הגדרת פונקציות גלובליות
@@ -123,9 +123,6 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
     let totalInvested = 0;
     let errors = [];
 
-    // מציאת הנתון האחרון
-    const lastValidData = sp500Data[sp500Data.length - 1];
-
     transactions.forEach(transaction => {
         const date = transaction.date;
         const action = transaction.action;
@@ -153,6 +150,7 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
         }
     });
 
+    const lastValidData = sp500Data[sp500Data.length - 1];
     const lastPrice = lastValidData.close;
     const lastDate = lastValidData.date;
     const finalValue = sp500Units * lastPrice;

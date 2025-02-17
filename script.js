@@ -123,9 +123,8 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
     let totalInvested = 0;
     let errors = [];
 
-    // מוצא את המחיר האחרון שקטן מ-5000
-    const validPrices = sp500Data.filter(data => data.close < 5000);
-    const lastValidData = validPrices[validPrices.length - 1];
+    // מציאת הנתון האחרון
+    const lastValidData = sp500Data[sp500Data.length - 1];
 
     transactions.forEach(transaction => {
         const date = transaction.date;
@@ -154,8 +153,8 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
         }
     });
 
-    const lastPrice = lastValidData ? lastValidData.close : 0;
-    const lastDate = lastValidData ? lastValidData.date : '';
+    const lastPrice = lastValidData.close;
+    const lastDate = lastValidData.date;
     const finalValue = sp500Units * lastPrice;
     const returnRate = totalInvested !== 0 ? ((finalValue - totalInvested) / totalInvested * 100) : 0;
 

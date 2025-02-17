@@ -2,13 +2,13 @@
 // ------------------------------------
 // @פרופ' גיל
 
-// נתוני S&P 500 קבועים (במקום לטעון מקובץ)
+// נתוני S&P 500 קבועים
 const SP500_DATA = [
     { date: "31/12/2023", close: 4769.83 },
     { date: "15/01/2024", close: 4783.45 },
     { date: "31/01/2024", close: 4845.65 },
     { date: "15/02/2024", close: 4920.18 },
-    { date: "28/02/2024", close: 5000.40 }
+    { date: "16/02/2024", close: 5000.40 }
 ];
 
 // הגדרת פונקציות גלובליות
@@ -150,7 +150,12 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
         }
     });
 
-    const lastPrice = sp500Data[sp500Data.length - 1]?.close || 0;
+    // מצא את המחיר האחרון שקטן מ-5000
+    const validPrices = sp500Data.filter(data => data.close < 5000);
+    const lastValidData = validPrices[validPrices.length - 1];
+    const lastPrice = lastValidData ? lastValidData.close : 0;
+    const lastDate = lastValidData ? lastValidData.date : '';
+    
     const finalValue = sp500Units * lastPrice;
     const returnRate = totalInvested !== 0 ? ((finalValue - totalInvested) / totalInvested * 100) : 0;
 
@@ -161,6 +166,7 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
             currentValue: finalValue,
             returnRate: returnRate,
             lastPrice: lastPrice,
+            lastDate: lastDate,
             transactionCount: transactions.length
         },
         errors: errors
@@ -195,6 +201,7 @@ function updateUI(result) {
     document.getElementById('returnRate').textContent = `${result.summary.returnRate > 0 ? '+' : ''}${formatNumber(result.summary.returnRate)}%`;
     document.getElementById('totalInvested').textContent = `השקעה: ${formatCurrency(result.summary.invested)}`;
     document.getElementById('lastPrice').textContent = formatCurrency(result.summary.lastPrice);
+    document.getElementById('lastPriceDate').textContent = `תאריך: ${result.summary.lastDate}`;
     document.getElementById('totalTransactions').textContent = result.summary.transactionCount;
 
     if (result.errors.length > 0) {

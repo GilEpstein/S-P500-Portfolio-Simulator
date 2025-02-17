@@ -62,11 +62,14 @@ async function startCalculation() {
     reader.onload = function(e) {
         try {
             const csvData = e.target.result;
+            console.log("CSV Data:", csvData);
+            
             const transactions = parseCSV(csvData);
-            console.log("נתוני התיק לאחר פענוח:", transactions);
-
-            // שימוש בנתונים הקבועים במקום לטעון מקובץ
+            console.log("Parsed Transactions:", transactions);
+            
             const result = comparePortfolioWithSP500(transactions, SP500_DATA);
+            console.log("Calculation Result:", result);
+            
             updateUI(result);
         } catch (error) {
             console.error("שגיאה:", error);
@@ -151,9 +154,7 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
     });
 
     const lastValidData = sp500Data[sp500Data.length - 1];
-    const lastPrice = lastValidData.close;
-    const lastDate = lastValidData.date;
-    const finalValue = sp500Units * lastPrice;
+    const finalValue = sp500Units * lastValidData.close;
     const returnRate = totalInvested !== 0 ? ((finalValue - totalInvested) / totalInvested * 100) : 0;
 
     return {
@@ -162,8 +163,8 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
             invested: totalInvested,
             currentValue: finalValue,
             returnRate: returnRate,
-            lastPrice: lastPrice,
-            lastDate: lastDate,
+            lastPrice: lastValidData.close,
+            lastDate: lastValidData.date,
             transactionCount: transactions.length
         },
         errors: errors
@@ -191,7 +192,13 @@ function hideLoading() {
 }
 
 function updateUI(result) {
-    document.getElementById('resultsArea').classList.remove('hidden');
+    const resultsArea = document.getElementById('resultsArea');
+    if (!resultsArea) {
+        console.error("resultsArea element not found");
+        return;
+    }
+    
+    resultsArea.classList.remove('hidden');
     
     document.getElementById('currentValue').textContent = formatCurrency(result.summary.currentValue);
     document.getElementById('totalUnits').textContent = `${formatNumber(result.summary.units, 4)} יחידות`;

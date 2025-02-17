@@ -1,21 +1,31 @@
 // מחשבון השוואת ביצועי תיק מול S&P 500
 // ------------------------------------
 // @פרופ' גיל
-// 
-// הנחיות להכנת קובץ הנתונים:
-// מבנה קובץ CSV הנדרש:
-// -------------------
-// Date,Action,Amount
-// 
-// הסבר העמודות:
-// Date   - תאריך העסקה (DD/MM/YYYY)
-// Action - סוג העסקה (buy/sell)
-// Amount - סכום בדולרים
-// 
-// דוגמה:
-// Date,Action,Amount
-// 31/12/2023,buy,1000
-// 15/01/2024,sell,500
+
+function downloadSampleCSV() {
+    // תוכן הקובץ לדוגמה
+    const csvContent = `Date,Action,Amount
+31/12/2023,buy,1000
+15/01/2024,sell,500
+01/02/2024,buy,2000
+15/02/2024,buy,1500
+28/02/2024,sell,800`;
+
+    // יצירת Blob מהתוכן
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // יצירת קישור להורדה
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'example_transactions.csv');
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
 function startCalculation() {
     const fileInput = document.getElementById('fileInput');
@@ -39,7 +49,8 @@ function startCalculation() {
         fetch('sp500_data.csv')
             .then(response => response.text())
             .then(data => {
-                console.log("📊 תוכן גולמי של sp500_data.csv:", data);
+                console.log("📊 תוכן גולמי של sp500_data.csv:");
+                console.log(data);
 
                 const sp500Data = parseSP500CSV(data);
                 console.log("📊 נתוני S&P 500 לאחר פענוח:", sp500Data);
@@ -90,7 +101,6 @@ function parseCSV(data) {
         return obj;
     }).filter(row => row.Date && row.Action && row.Amount);
 }
-
 // ✅ פונקציה לפענוח `sp500_data.csv`
 function parseSP500CSV(data) {
     const rows = data.split("\n").map(row => row.trim()).filter(row => row.length > 0);
@@ -112,6 +122,7 @@ function parseSP500CSV(data) {
         };
     }).filter(row => row !== null && !isNaN(row.close));
 }
+
 // ✅ פונקציה להשוואה בין תיק המשתמש ל-S&P 500
 function comparePortfolioWithSP500(transactions, sp500Data) {
     let sp500Units = 0;

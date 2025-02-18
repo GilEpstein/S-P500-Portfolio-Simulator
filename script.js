@@ -105,3 +105,175 @@ async function startCalculation() {
         hideLoading();
     }
 }
+// פונקציה לפענוח קובץ העסקאות
+function parseCSV(data) {
+    const parseResult = Papa.parse(data, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: header => header.trim(),
+        transform: value => value.trim()
+    });
+
+    if (parseResult.errors.length > 0) {
+        console.error("שגיאות בפענוח:", parseResult.errors);
+        throw new Error("שגיאה בפענוח קובץ העסקאות");
+    }
+
+    const transactions = parseResult.data
+        .map(row => ({
+            date: row['תאריך'],
+            action: row['פעולה'],
+            amount: parseFloat(row['סכום'])
+        }))
+        .filter(transaction => {
+            if (!transaction.date || isNaN(transaction.amount)) {
+                console.warn("שורה לא תקינה:", transaction);
+                return false;
+            }
+            if (!['קניה', 'מכירה'].includes(transaction.action)) {
+                console.warn("פעולה לא מוכרת:", transaction);
+                return false;
+            }
+            return true;
+        });
+
+    if (transactions.length === 0) {
+        throw new Error("לא נמצאו עסקאות תקינות בקובץ");
+    }
+
+    return transactions;
+}
+
+// פונקציה להשוואת הביצועים
+function comparePortfolioWithSP500(transactions, sp500Data) {
+    let sp500Units = 0;
+    let totalInvested = 0;
+    let skippedDates = [];
+    let validTransactions = [];
+    let errors = [];
+
+    // מיון העסקאות לפי תאריך
+    transactions.sort((a, b) => {
+        const dateA = new Date(a.date.split('/').reverse().join('-'));
+        const dateB = new Date(b.date.split('/').reverse().join('-'));
+        return dateA - dateB;
+    });
+
+    transactions.forEach(transaction => {
+        const date = transaction.date;
+        const spData = sp500Data.find(row => row.date === date);
+        
+        if (!spData) {
+            skippedDates.push(date);
+            return;
+        }
+
+        validTransactions.push(transaction);
+        const action = transaction.action;
+        const amount = transaction.amount;
+        const spPrice = spData.close;
+        const units = amount / spPrice;
+
+        if (action === "קניה") {
+            sp500Units += units;
+            totalInvested += amount;
+        } else if (action === "מכירה") {
+            if (sp500Units < units) {
+                errors.push(`שגיאה: ניסיון למכור ${formatNumber(units, 4)} יחידות בתאריך ${date} כאשר קיימות רק ${formatNumber(sp500Units, 4)} יחידות`);
+                return;
+            }
+            sp500Units -= units;
+            totalInvested -= amount;
+        }
+    });
+
+    if (skippedDates.length > 0) {
+        errors.push(`לתשומת לבך: הימים הבאים לא נכללו בחישוב כיוון שלא התקיים בהם מסחר: ${skippedDates.join(', ')}`);
+    }
+
+    const lastValidData = sp500Data[sp500Data.length - 1];
+    const finalValue = sp500Units * lastValidData.close;
+    const returnRate = totalInvested !== 0 ? ((finalValue - totalInvested) / totalInvested * 100) : 0;
+
+    return {
+        summary: {
+            units: sp500Units,
+            invested: totalInvested,
+            currentValue: finalValue,
+            returnRate: returnRate,
+            lastPrice: lastValidData.close,
+            lastDate: lastValidData.date,
+            validTransactions: validTransactions.length,
+            totalTransactions: transactions.length,
+            skippedTransactions: skippedDates.length
+        },
+        errors: errors
+    };
+}
+
+// פונקציות UI
+function showError(message) {
+    const errorArea = document.getElementById('errorArea');
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.textContent = message;
+    errorArea.classList.remove('hidden');
+}
+
+function hideError() {
+    document.getElementById('errorArea').classList.add('hidden');
+}
+
+function showLoading() {
+    document.getElementById('loadingArea').classList.remove('hidden');
+}
+
+function hideLoading() {
+    document.getElementById('loadingArea').classList.add('hidden');
+}
+
+function updateUI(result) {
+    const resultsArea = document.getElementById('resultsArea');
+    resultsArea.classList.remove('hidden');
+    
+    document.getElementById('currentValue').textContent = formatCurrency(result.summary.currentValue);
+    document.getElementById('totalUnits').textContent = `${formatNumber(result.summary.units, 4)} יחידות`;
+    document.getElementById('returnRate').textContent = `${result.summary.returnRate > 0 ? '+' : ''}${formatNumber(result.summary.returnRate)}%`;
+    document.getElementById('totalInvested').textContent = `השקעה: ${formatCurrency(result.summary.invested)}`;
+    document.getElementById('lastPrice').textContent = formatCurrency(result.summary.lastPrice);
+    document.getElementById('lastPriceDate').textContent = `תאריך: ${result.summary.lastDate}`;
+    document.getElementById('totalTransactions').textContent = 
+        `${result.summary.validTransactions} מתוך ${result.summary.totalTransactions}`;
+
+    if (result.errors.length > 0) {
+        showError(result.errors.join('\n'));
+    }
+}
+
+// הגדרת אירועי גרירת קבצים
+const dropZone = document.getElementById('dropZone');
+
+dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    dropZone.classList.add('border-blue-400', 'bg-blue-100');
+});
+
+dropZone.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('border-blue-400', 'bg-blue-100');
+});
+
+dropZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('border-blue-400', 'bg-blue-100');
+    
+    const dt = e.dataTransfer;
+    const files = dt.files;
+
+    if (files.length) {
+        document.getElementById('fileInput').files = files;
+        startCalculation();
+    }
+});
+
+// האזנה לשינויים בקובץ
+document.getElementById('fileInput').addEventListener('change', startCalculation);

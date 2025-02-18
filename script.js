@@ -5,7 +5,7 @@
 // פונקציה לטעינת נתוני S&P 500
 async function loadSP500Data() {
     try {
-        const response = await window.fs.readFile('1929 2025.csv', { encoding: 'utf8' });
+        const response = await window.fs.readFile('sp500_data.csv', { encoding: 'utf8' });
         const result = Papa.parse(response, {
             header: true,
             dynamicTyping: true,

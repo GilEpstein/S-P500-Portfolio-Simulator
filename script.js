@@ -183,7 +183,8 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
         }
     });
 
-    const lastPrice = sp500Data[sp500Data.length - 1]?.close || 0;
+    const lastValidData = sp500Data[sp500Data.length - 1];
+    const lastPrice = lastValidData?.close || 0;
     const finalValue = sp500Units * lastPrice;
     const returnRate = totalInvested !== 0 ? ((finalValue - totalInvested) / totalInvested * 100) : 0;
 
@@ -194,6 +195,7 @@ function comparePortfolioWithSP500(transactions, sp500Data) {
             currentValue: finalValue,
             returnRate: returnRate,
             lastPrice: lastPrice,
+            lastDate: lastValidData?.date || '',  // הוספת התאריך האחרון
             transactionCount: transactions.length
         },
         errors: errors
@@ -229,7 +231,7 @@ function updateUI(result) {
     document.getElementById('totalUnits').textContent = `${formatNumber(result.summary.units, 4)} יחידות`;
     document.getElementById('returnRate').textContent = `${result.summary.returnRate > 0 ? '+' : ''}${formatNumber(result.summary.returnRate)}%`;
     document.getElementById('totalInvested').textContent = `השקעה: ${formatCurrency(result.summary.invested)}`;
-    document.getElementById('lastPrice').textContent = formatCurrency(result.summary.lastPrice);
+    document.getElementById('lastPrice').textContent = `${formatCurrency(result.summary.lastPrice)} (נכון ל-${result.summary.lastDate})`; // הוספת התאריך האחרון
     document.getElementById('totalTransactions').textContent = result.summary.transactionCount;
 
     // מציג שגיאות אם יש

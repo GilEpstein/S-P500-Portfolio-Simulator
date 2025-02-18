@@ -50,26 +50,33 @@ function startCalculation() {
     hideError();
     showLoading();
 
-    reader.onload = async function(e) {
+    reader.onload = function(e) {
         try {
             const csvData = e.target.result;
             const transactions = parseCSV(csvData);
             console.log("נתוני התיק לאחר פענוח:", transactions);
 
-            // שינוי כאן: משתמשים ב-window.fs.readFile במקום fetch
-            const sp500Text = await window.fs.readFile('sp500_data.csv', { encoding: 'utf8' });
-            const sp500Data = parseSP500CSV(sp500Text);
-
-            if (sp500Data.length === 0) {
-                throw new Error("שגיאה: קובץ נתוני S&P 500 לא נטען כראוי");
-            }
-
-            const result = comparePortfolioWithSP500(transactions, sp500Data);
-            updateUI(result);
+            // שימוש ב-fetch במקום window.fs.readFile
+            fetch('sp500_data.csv')
+                .then(response => response.text())
+                .then(sp500Text => {
+                    const sp500Data = parseSP500CSV(sp500Text);
+                    if (sp500Data.length === 0) {
+                        throw new Error("שגיאה: קובץ נתוני S&P 500 לא נטען כראוי");
+                    }
+                    const result = comparePortfolioWithSP500(transactions, sp500Data);
+                    updateUI(result);
+                })
+                .catch(error => {
+                    console.error("שגיאה:", error);
+                    showError(error.message);
+                })
+                .finally(() => {
+                    hideLoading();
+                });
         } catch (error) {
             console.error("שגיאה:", error);
             showError(error.message);
-        } finally {
             hideLoading();
         }
     };
@@ -234,18 +241,17 @@ function updateUI(result) {
 // הגדרת אירועי גרירת קבצים
 const dropZone = document.getElementById('dropZone');
 
-// הפונקציות הבאות צריכות להיות גלובליות
-window.handleDragOver = function(e) {
+dropZone.addEventListener('dragover', function(e) {
     e.preventDefault();
     dropZone.classList.add('border-blue-400', 'bg-blue-100');
-};
+});
 
-window.handleDragLeave = function(e) {
+dropZone.addEventListener('dragleave', function(e) {
     e.preventDefault();
     dropZone.classList.remove('border-blue-400', 'bg-blue-100');
-};
+});
 
-window.handleDrop = function(e) {
+dropZone.addEventListener('drop', function(e) {
     e.preventDefault();
     dropZone.classList.remove('border-blue-400', 'bg-blue-100');
     
@@ -256,7 +262,7 @@ window.handleDrop = function(e) {
         document.getElementById('fileInput').files = files;
         startCalculation();
     }
-};
+});
 
 // האזנה לשינויים בקובץ
 document.getElementById('fileInput').addEventListener('change', startCalculation);

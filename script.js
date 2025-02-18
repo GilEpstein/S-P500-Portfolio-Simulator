@@ -122,6 +122,7 @@ function parseCSV(data) {
 
     return transactions;
 }
+
 // פונקציה לפענוח נתוני S&P 500
 function parseSP500CSV(data) {
     const parseResult = Papa.parse(data, {
@@ -231,7 +232,8 @@ function updateUI(result) {
     document.getElementById('totalUnits').textContent = `${formatNumber(result.summary.units, 4)} יחידות`;
     document.getElementById('returnRate').textContent = `${result.summary.returnRate > 0 ? '+' : ''}${formatNumber(result.summary.returnRate)}%`;
     document.getElementById('totalInvested').textContent = `השקעה: ${formatCurrency(result.summary.invested)}`;
-    document.getElementById('lastPrice').textContent = `${formatCurrency(result.summary.lastPrice)} (נכון ל-${result.summary.lastDate})`; // הוספת התאריך האחרון
+    document.getElementById('lastPrice').textContent = formatCurrency(result.summary.lastPrice);
+    document.getElementById('lastDate').textContent = `(נכון ל-${result.summary.lastDate})`;
     document.getElementById('totalTransactions').textContent = result.summary.transactionCount;
 
     // מציג שגיאות אם יש

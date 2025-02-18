@@ -1,131 +1,272 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>מחשבון השוואת תיק השקעות</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash/4.17.21/lodash.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap');
-    * { font-family: 'Heebo', sans-serif; }
-    .loading-spinner { animation: spin 1s linear infinite; }
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  </style>
-</head>
-<body class="bg-gray-50">
-  <div class="container mx-auto px-4 py-8 max-w-4xl">
-    <!-- כותרת ראשית והסבר -->
-    <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-800 mb-2">השוואת ביצועי תיק השקעות</h1>
-      <p class="text-gray-600 mb-1">השווה את ביצועי התיק שלך למדד S&P 500</p>
-      <p class="text-sm text-gray-500">@פרופ' גיל</p>
-    </div>
+// מחשבון השוואת ביצועי תיק מול S&P 500
+// ------------------------------------
+// @פרופ' גיל
 
-    <!-- הסבר מפורט והורדה -->
-    <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-      <div class="mb-6">
-        <p class="text-gray-700 mb-6 leading-relaxed">
-          באמצעות כלי זה תוכל לבדוק האם היית מרוויח יותר אילו במקום לקנות ולמכור מניות ספציפיות,
-          היית משקיע את אותם הסכומים במדד S&P 500. העלה קובץ עם פירוט הקניות והמכירות שלך,
-          והמערכת תחשב עבורך את התשואה שהיית מקבל במדד.
-        </p>
-        <div class="text-center">
-          <button onclick="downloadSampleFile()"
-                  class="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm">
-            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-            </svg>
-            הורד קובץ CSV לדוגמה
-          </button>
-        </div>
-      </div>
-      <!-- אזור העלאת קובץ -->
-      <div id="dropZone" class="drop-zone mt-6">
-        <label for="fileInput" class="block w-full cursor-pointer">
-          <div class="flex flex-col items-center p-8 border-2 border-dashed border-blue-200 rounded-lg hover:border-blue-400 bg-blue-50 hover:bg-blue-100">
-            <svg class="w-16 h-16 mb-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-            </svg>
-            <h3 class="text-lg font-semibold text-gray-700 mb-2">העלה קובץ עסקאות</h3>
-            <p class="text-sm text-gray-500 text-center">גרור לכאן קובץ CSV או לחץ לבחירה</p>
-          </div>
-        </label>
-        <input id="fileInput" type="file" accept=".csv" class="hidden">
-      </div>
-      <!-- אזורי טעינה ושגיאות -->
-      <div id="loadingArea" class="hidden text-center py-8">
-        <div class="loading-spinner w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p class="text-gray-600">מעבד את הנתונים...</p>
-      </div>
-      <div id="errorArea" class="hidden mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-        <div class="flex items-center text-red-700">
-          <svg class="w-5 h-5 ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          <span id="errorMessage" class="font-medium"></span>
-        </div>
-      </div>
-    </div>
+// הגדרת פונקציות גלובליות
+window.downloadSampleFile = downloadSampleFile;
+window.startCalculation = startCalculation;
 
-    <!-- כותרת המציינת את תאריך הנתונים – מופיעה כאן לפני אזור התוצאות -->
-    <div class="text-center mb-4">
-      <h2 id="validDate" class="text-2xl font-semibold text-gray-700"></h2>
-    </div>
+// פונקציית הורדת קובץ דוגמה
+function downloadSampleFile() {
+    const csvContent = `תאריך,פעולה,סכום
+31/12/2023,קניה,1000
+15/01/2024,מכירה,500`;
 
-    <!-- אזור תוצאות -->
-    <div id="resultsArea" class="hidden mt-8 space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- שווי נוכחי -->
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <svg class="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <h3 class="text-lg font-semibold">שווי נוכחי</h3>
-          </div>
-          <p id="currentValue" class="text-3xl font-bold mb-2">$0.00</p>
-          <p id="totalUnits" class="text-blue-100">0 יחידות</p>
-        </div>
-        <!-- תשואה -->
-        <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <svg class="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-            </svg>
-            <h3 class="text-lg font-semibold">תשואה כוללת</h3>
-          </div>
-          <p id="returnRate" class="text-3xl font-bold mb-2">0%</p>
-          <p id="totalInvested" class="text-green-100">השקעה: $0</p>
-        </div>
-      </div>
-      <div class="bg-white rounded-xl p-6 border border-gray-200">
-        <h3 class="text-lg font-semibold mb-4 flex items-center">
-          <svg class="w-5 h-5 ml-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-          פרטים נוספים
-        </h3>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="p-4 bg-gray-50 rounded-lg">
-            <p class="text-sm text-gray-500 mb-1">מחיר אחרון</p>
-            <p id="lastPrice" class="text-xl font-semibold">$0.00</p>
-          </div>
-          <div class="p-4 bg-gray-50 rounded-lg">
-            <p class="text-sm text-gray-500 mb-1">מספר עסקאות</p>
-            <p id="totalTransactions" class="text-xl font-semibold">0</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <script src="script.js"></script>
-</body>
-</html>
+    // יצירת קובץ עם תמיכה בעברית
+    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = window.URL.createObjectURL(blob);
+    link.download = "דוגמה_לקובץ_עסקאות.csv";
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(link.href);
+}
+
+// פונקציות עזר
+function formatNumber(number, decimals = 2) {
+    return new Intl.NumberFormat('he-IL', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    }).format(number);
+}
+
+function formatCurrency(number) {
+    return `$${formatNumber(number)}`;
+}
+
+// פונקציה ראשית לחישוב
+function startCalculation() {
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput.files.length === 0) {
+        showError("אנא בחר קובץ CSV להעלאה");
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    hideError();
+    showLoading();
+
+    reader.onload = function(e) {
+        try {
+            const csvData = e.target.result;
+            const transactions = parseCSV(csvData);
+            console.log("נתוני התיק לאחר פענוח:", transactions);
+
+            // שימוש ב-fetch כדי לטעון את נתוני ה-S&P 500
+            fetch('sp500_data.csv')
+                .then(response => response.text())
+                .then(sp500Text => {
+                    const sp500Data = parseSP500CSV(sp500Text);
+                    if (sp500Data.length === 0) {
+                        throw new Error("שגיאה: קובץ נתוני S&P 500 לא נטען כראוי");
+                    }
+                    const result = comparePortfolioWithSP500(transactions, sp500Data);
+                    updateUI(result);
+                })
+                .catch(error => {
+                    console.error("שגיאה:", error);
+                    showError(error.message);
+                })
+                .finally(() => {
+                    hideLoading();
+                });
+        } catch (error) {
+            console.error("שגיאה:", error);
+            showError(error.message);
+            hideLoading();
+        }
+    };
+
+    reader.readAsText(file);
+}
+
+// פונקציה לפענוח קובץ העסקאות
+function parseCSV(data) {
+    const parseResult = Papa.parse(data, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: header => header.trim(),
+        transform: value => value.trim()
+    });
+
+    if (parseResult.errors.length > 0) {
+        console.error("שגיאות בפענוח:", parseResult.errors);
+        throw new Error("שגיאה בפענוח קובץ העסקאות");
+    }
+
+    const transactions = parseResult.data
+        .map(row => ({
+            date: row['תאריך'],
+            action: row['פעולה'],
+            amount: parseFloat(row['סכום'])
+        }))
+        .filter(transaction => {
+            if (!transaction.date || isNaN(transaction.amount)) {
+                console.warn("שורה לא תקינה:", transaction);
+                return false;
+            }
+            if (!['קניה', 'מכירה'].includes(transaction.action)) {
+                console.warn("פעולה לא מוכרת:", transaction);
+                return false;
+            }
+            return true;
+        });
+
+    if (transactions.length === 0) {
+        throw new Error("לא נמצאו עסקאות תקינות בקובץ");
+    }
+
+    return transactions;
+}
+
+// פונקציה לפענוח נתוני S&P 500
+function parseSP500CSV(data) {
+    const parseResult = Papa.parse(data, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: true,
+        transformHeader: header => header.trim()
+    });
+
+    if (parseResult.errors.length > 0) {
+        console.error("שגיאות בפענוח S&P 500:", parseResult.errors);
+        throw new Error("שגיאה בפענוח נתוני S&P 500");
+    }
+
+    const sp500Data = parseResult.data
+        .map(row => ({
+            date: row.Date?.trim(),
+            close: parseFloat(row.Close)
+        }))
+        .filter(row => row.date && !isNaN(row.close));
+
+    if (sp500Data.length === 0) {
+        throw new Error("לא נמצאו נתונים תקינים בקובץ S&P 500");
+    }
+
+    return sp500Data;
+}
+
+// פונקציה להשוואת הביצועים
+function comparePortfolioWithSP500(transactions, sp500Data) {
+    let sp500Units = 0;
+    let totalInvested = 0;
+    let errors = [];
+
+    transactions.forEach(transaction => {
+        const date = transaction.date;
+        const action = transaction.action;
+        const amount = transaction.amount;
+
+        const spData = sp500Data.find(row => row.date === date);
+        if (!spData) {
+            errors.push(`אין נתוני מסחר לתאריך ${date}`);
+            return;
+        }
+
+        const spPrice = spData.close;
+        const units = amount / spPrice;
+
+        if (action === "קניה") {
+            sp500Units += units;
+            totalInvested += amount;
+        } else if (action === "מכירה") {
+            if (sp500Units < units) {
+                errors.push(`ניסיון למכור יותר יחידות מהקיים בתאריך ${date}`);
+                return;
+            }
+            sp500Units -= units;
+            totalInvested -= amount;
+        }
+    });
+
+    const lastValidData = sp500Data[sp500Data.length - 1];
+    const lastPrice = lastValidData?.close || 0;
+    const finalValue = sp500Units * lastPrice;
+    const returnRate = totalInvested !== 0 ? ((finalValue - totalInvested) / totalInvested * 100) : 0;
+
+    return {
+        summary: {
+            units: sp500Units,
+            invested: totalInvested,
+            currentValue: finalValue,
+            returnRate: returnRate,
+            lastPrice: lastPrice,
+            lastDate: lastValidData?.date || '',
+            transactionCount: transactions.length
+        },
+        errors: errors
+    };
+}
+
+// פונקציות UI להצגת תוצאות, טעינה ושגיאות
+function showError(message) {
+    const errorArea = document.getElementById('errorArea');
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.textContent = message;
+    errorArea.classList.remove('hidden');
+}
+
+function hideError() {
+    document.getElementById('errorArea').classList.add('hidden');
+}
+
+function showLoading() {
+    document.getElementById('loadingArea').classList.remove('hidden');
+}
+
+function hideLoading() {
+    document.getElementById('loadingArea').classList.add('hidden');
+}
+
+function updateUI(result) {
+    // עדכון כותרת התאריך – מופיעה מעל אזור התוצאות
+    document.getElementById('validDate').textContent =
+        `נתונים נכונים לתאריך: ${result.summary.lastDate}`;
+
+    // עדכון שאר הערכים
+    document.getElementById('resultsArea').classList.remove('hidden');
+    document.getElementById('currentValue').textContent = formatCurrency(result.summary.currentValue);
+    document.getElementById('totalUnits').textContent = `${formatNumber(result.summary.units, 4)} יחידות`;
+    document.getElementById('returnRate').textContent = `${result.summary.returnRate > 0 ? '+' : ''}${formatNumber(result.summary.returnRate)}%`;
+    document.getElementById('totalInvested').textContent = `השקעה: ${formatCurrency(result.summary.invested)}`;
+    document.getElementById('lastPrice').textContent = formatCurrency(result.summary.lastPrice);
+    document.getElementById('totalTransactions').textContent = result.summary.transactionCount;
+
+    if (result.errors.length > 0) {
+        showError(result.errors.join('\n'));
+    }
+}
+
+// הגדרת אירועי גרירת קבצים
+const dropZone = document.getElementById('dropZone');
+
+dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    dropZone.classList.add('border-blue-400', 'bg-blue-100');
+});
+
+dropZone.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('border-blue-400', 'bg-blue-100');
+});
+
+dropZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('border-blue-400', 'bg-blue-100');
+
+    const dt = e.dataTransfer;
+    const files = dt.files;
+
+    if (files.length) {
+        document.getElementById('fileInput').files = files;
+        startCalculation();
+    }
+});
+
+// האזנה לשינויים בקובץ
+document.getElementById('fileInput').addEventListener('change', startCalculation);

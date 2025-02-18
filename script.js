@@ -227,6 +227,9 @@ function updateUI(result) {
     // מעדכן את אזור התוצאות
     document.getElementById('resultsArea').classList.remove('hidden');
     
+    // מעדכן את הכותרת עם התאריך של הנתונים
+    document.getElementById('validDate').textContent = `נתונים נכונים לתאריך: ${result.summary.lastDate}`;
+    
     // מעדכן ערכים
     document.getElementById('currentValue').textContent = formatCurrency(result.summary.currentValue);
     document.getElementById('totalUnits').textContent = `${formatNumber(result.summary.units, 4)} יחידות`;

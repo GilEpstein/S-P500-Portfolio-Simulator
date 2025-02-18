@@ -224,9 +224,11 @@ function hideLoading() {
 }
 
 function updateUI(result) {
-    // עדכון כותרת התאריך – מופיעה מעל אזור התוצאות
-    document.getElementById('validDate').textContent =
-        `נתונים נכונים לתאריך: ${result.summary.lastDate}`;
+    // בדיקה אם האלמנט validDate קיים לפני עדכון
+    const validDateEl = document.getElementById('validDate');
+    if (validDateEl) {
+        validDateEl.textContent = `נתונים נכונים לתאריך: ${result.summary.lastDate}`;
+    }
 
     // עדכון שאר הערכים
     document.getElementById('resultsArea').classList.remove('hidden');

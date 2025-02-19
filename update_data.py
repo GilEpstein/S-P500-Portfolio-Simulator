@@ -6,9 +6,9 @@ import urllib.parse
 
 # הגדר את המפתח שלך
 API_KEY = "0bhmMV9ffeGECne1ZojDkMaIoqBklxeq"
-# השתמש בסמל ^GSPC
-TICKER = "^GSPC"
-# קידוד URL לסמל (כדי שהתווים המיוחדים יתורגמו כראוי)
+# השתמש בסמל SPY במקום ^GSPC
+TICKER = "SPY"
+# קידוד URL לסמל (למנוע בעיות עם תווים מיוחדים)
 encoded_ticker = urllib.parse.quote(TICKER)
 
 URL = f"https://api.polygon.io/v2/aggs/ticker/{encoded_ticker}/prev?adjusted=true&apiKey={API_KEY}"
@@ -35,7 +35,7 @@ csv_file = "sp500_data.csv"
 file_exists = os.path.exists(csv_file)
 file_is_empty = not file_exists or os.path.getsize(csv_file) == 0
 
-# פותחים את הקובץ במצב append כדי להוסיף רשומה חדשה מבלי לדרוס את הנתונים הקיימים
+# הוספת נתונים לקובץ (append) ללא החלפת הנתונים הקיימים
 with open(csv_file, "a", newline="", encoding="utf-8") as f:
     fieldnames = ["Date", "Close"]
     writer = csv.DictWriter(f, fieldnames=fieldnames)

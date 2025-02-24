@@ -6,33 +6,38 @@
 window.downloadSampleFile = downloadSampleFile;
 window.startCalculation = startCalculation;
 
-// פונקציה לעדכון מונה שימוש
+// פונקציה לעדכון מונה שימוש - מוודא שזה עובד
 function updateUsageCounter() {
-    // בדיקה אם קיים מונה בלוקל סטורג'
-    let counter = localStorage.getItem('appUsageCounter');
-    
-    // אם המונה לא קיים, יוצרים אותו
-    if (!counter) {
-        counter = 0;
-    } else {
-        counter = parseInt(counter);
+    try {
+        // בדיקה אם קיים מונה בלוקל סטורג'
+        let counter = localStorage.getItem('appUsageCounter');
+        
+        // אם המונה לא קיים, יוצרים אותו
+        if (!counter) {
+            counter = 0;
+        } else {
+            counter = parseInt(counter);
+        }
+        
+        // מגדילים את המונה ב-1
+        counter++;
+        
+        // שומרים את המונה המעודכן
+        localStorage.setItem('appUsageCounter', counter);
+        
+        // מדפיס בצורה בולטת יותר לניפוי שגיאות
+        console.log('%c מספר שימושים באפליקציה: ' + counter, 'font-size: 16px; color: red; font-weight: bold;');
+        
+        return counter;
+    } catch (error) {
+        console.error('שגיאה בעדכון המונה:', error);
+        return 0;
     }
-    
-    // מגדילים את המונה ב-1
-    counter++;
-    
-    // שומרים את המונה המעודכן
-    localStorage.setItem('appUsageCounter', counter);
-    
-    // שליחת המידע לשרת (אם יהיה צורך בעתיד)
-    // כרגע רק מדפיסים למסוף כדי שתוכל לראות
-    console.log('מספר שימושים באפליקציה:', counter);
-    
-    return counter;
 }
 
 // פונקציית הורדת קובץ דוגמה
 function downloadSampleFile() {
+    console.log('מתחיל הורדת קובץ דוגמה...');
     const csvContent = `תאריך,פעולה,סכום
 31/12/2023,קניה,1000
 15/01/2024,מכירה,500`;
@@ -50,6 +55,7 @@ function downloadSampleFile() {
     
     // מעדכן את מונה השימוש
     updateUsageCounter();
+    console.log('סיים הורדת קובץ');
 }
 
 // פונקציות עזר
@@ -66,6 +72,7 @@ function formatCurrency(number) {
 
 // פונקציה ראשית לחישוב
 function startCalculation() {
+    console.log('מתחיל חישוב...');
     // מעדכן את מונה השימוש
     updateUsageCounter();
     
@@ -114,6 +121,7 @@ function startCalculation() {
 
     reader.readAsText(file);
 }
+
 // פונקציה לפענוח קובץ העסקאות
 function parseCSV(data) {
     const parseResult = Papa.parse(data, {
@@ -276,6 +284,7 @@ function updateUI(result) {
 
 // קריאה למונה בטעינת הדף
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('דף נטען - מעדכן מונה...');
     updateUsageCounter();
 });
 
@@ -307,3 +316,6 @@ dropZone.addEventListener('drop', function(e) {
 
 // האזנה לשינויים בקובץ
 document.getElementById('fileInput').addEventListener('change', startCalculation);
+
+// הודעה כשהסקריפט נטען להבטיח שהוא נטען כראוי
+console.log('סקריפט נטען בהצלחה!');

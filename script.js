@@ -6,6 +6,31 @@
 window.downloadSampleFile = downloadSampleFile;
 window.startCalculation = startCalculation;
 
+// פונקציה לעדכון מונה שימוש
+function updateUsageCounter() {
+    // בדיקה אם קיים מונה בלוקל סטורג'
+    let counter = localStorage.getItem('appUsageCounter');
+    
+    // אם המונה לא קיים, יוצרים אותו
+    if (!counter) {
+        counter = 0;
+    } else {
+        counter = parseInt(counter);
+    }
+    
+    // מגדילים את המונה ב-1
+    counter++;
+    
+    // שומרים את המונה המעודכן
+    localStorage.setItem('appUsageCounter', counter);
+    
+    // שליחת המידע לשרת (אם יהיה צורך בעתיד)
+    // כרגע רק מדפיסים למסוף כדי שתוכל לראות
+    console.log('מספר שימושים באפליקציה:', counter);
+    
+    return counter;
+}
+
 // פונקציית הורדת קובץ דוגמה
 function downloadSampleFile() {
     const csvContent = `תאריך,פעולה,סכום
@@ -22,6 +47,9 @@ function downloadSampleFile() {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(link.href);
+    
+    // מעדכן את מונה השימוש
+    updateUsageCounter();
 }
 
 // פונקציות עזר
@@ -38,6 +66,9 @@ function formatCurrency(number) {
 
 // פונקציה ראשית לחישוב
 function startCalculation() {
+    // מעדכן את מונה השימוש
+    updateUsageCounter();
+    
     const fileInput = document.getElementById('fileInput');
     if (fileInput.files.length === 0) {
         showError("אנא בחר קובץ CSV להעלאה");
@@ -83,7 +114,6 @@ function startCalculation() {
 
     reader.readAsText(file);
 }
-
 // פונקציה לפענוח קובץ העסקאות
 function parseCSV(data) {
     const parseResult = Papa.parse(data, {
@@ -243,6 +273,11 @@ function updateUI(result) {
         showError(result.errors.join('\n'));
     }
 }
+
+// קריאה למונה בטעינת הדף
+document.addEventListener('DOMContentLoaded', function() {
+    updateUsageCounter();
+});
 
 // הגדרת אירועי גרירת קבצים
 const dropZone = document.getElementById('dropZone');

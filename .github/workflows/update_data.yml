@@ -24,7 +24,7 @@ jobs:
           pip install requests
 
       - name: Run update script
-        run: python update_data.py
+        run: python update_data_backfill.py
 
       - name: Commit and push changes
         run: |

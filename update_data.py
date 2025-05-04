@@ -1,46 +1,28 @@
-import os
-import csv
-import requests
+import yfinance as yf
+import pandas as pd
 from datetime import datetime
-import urllib.parse
 
-# הגדר את המפתח שלך
-API_KEY = "0bhmMV9ffeGECne1ZojDkMaIoqBklxeq"
-# השתמש בסמל SPY במקום ^GSPC
-TICKER = "SPY"
-# קידוד URL לסמל (למנוע בעיות עם תווים מיוחדים)
-encoded_ticker = urllib.parse.quote(TICKER)
+# Load historical data from Yahoo Finance for S&P 500
+ticker = yf.Ticker("^GSPC")
+hist = ticker.history(period="1mo")
 
-URL = f"https://api.polygon.io/v2/aggs/ticker/{encoded_ticker}/prev?adjusted=true&apiKey={API_KEY}"
+# Check for valid data
+if hist.empty:
+    raise Exception("No data received from Yahoo Finance.")
 
-response = requests.get(URL)
-data = response.json()
+# Extract latest closing value and date
+last = hist.tail(1).iloc[0]
+closing = round(last["Close"], 2)
+date = last.name.strftime("%d/%m/%Y")
 
-print("Response from API:")
-print(data)
+# Path to CSV file in the correct folder
+csv_file = "public/sp500_data.csv"
+df = pd.read_csv(csv_file)
 
-results = data.get("results", [])
-if not results:
-    print("No data found or invalid response.")
-    exit(1)
-
-latest_data = results[0]
-close_price = latest_data.get("c", 0)  # מחיר הסגירה
-timestamp = latest_data.get("t", 0)    # timestamp במילישניות
-
-# המרת ה-timestamp לתאריך בפורמט YYYY-MM-DD (UTC)
-date_str = datetime.utcfromtimestamp(timestamp/1000).strftime('%Y-%m-%d')
-
-csv_file = "sp500_data.csv"
-file_exists = os.path.exists(csv_file)
-file_is_empty = not file_exists or os.path.getsize(csv_file) == 0
-
-# הוספת נתונים לקובץ (append) ללא החלפת הנתונים הקיימים
-with open(csv_file, "a", newline="", encoding="utf-8") as f:
-    fieldnames = ["Date", "Close"]
-    writer = csv.DictWriter(f, fieldnames=fieldnames)
-    if file_is_empty:
-        writer.writeheader()
-    writer.writerow({"Date": date_str, "Close": close_price})
-
-print(f"Appended data for {date_str} with close price {close_price}")
+# Add new data if not already present
+if not df['Month'].astype(str).str.contains(date).any():
+    df = pd.concat([df, pd.DataFrame([{"Month": date, "Closing": closing}])], ignore_index=True)
+    df.to_csv(csv_file, index=False)
+    print(f"✅ Added new row: {date}, {closing}")
+else:
+    print(f"ℹ️ Data for {date} already exists.")

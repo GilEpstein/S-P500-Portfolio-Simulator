@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import os
 
 # הגדרת הקובץ
-csv_file = "public/sp500_data.csv"
+csv_file = "sp500_data.csv"
 
 # הורדת נתוני S&P500
 ticker = yf.Ticker("^GSPC")

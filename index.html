@@ -1,22 +1,23 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+
+<html dir="rtl" lang="he">
 <head>
-      <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-C5YE01DV10"></script>
-    <script>
+<!-- Google tag (gtag.js) -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-C5YE01DV10"></script>
+<script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
     
       gtag('config', 'G-C5YE01DV10');
     </script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>מחשבון השוואת תיק השקעות</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash/4.17.21/lodash.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>מחשבון השוואת תיק השקעות</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash/4.17.21/lodash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
     @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap');
     * { font-family: 'Heebo', sans-serif; }
     .loading-spinner { animation: spin 1s linear infinite; }
@@ -24,135 +25,128 @@
   </style>
 </head>
 <body class="bg-gray-50">
-  <div class="container mx-auto px-4 py-8 max-w-4xl">
-    <!-- כותרת ראשית והסבר -->
-    <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-800 mb-2">השוואת ביצועי תיק השקעות</h1>
-      <p class="text-gray-600 mb-1">השווה את ביצועי התיק שלך למדד S&P 500</p>
-      <p class="text-sm text-gray-500">@פרופ' גיל</p>
-    </div>
-
-    <!-- הסבר מפורט והורדה -->
-    <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-      <!-- חלק 1: הצגת הרעיון עם שורה חדשה לאחר המשפט הראשון -->
-      <p class="text-gray-700 mb-6 leading-relaxed">
-        עם הכלי הזה תוכל לבדוק האם אסטרטגיית השקעה חלופית הייתה מניבה תשואה גבוהה יותר.<br>
-        במקום לבצע קניות ומכירות במניות ספציפיות, תוכל לבדוק מה הייתה התשואה אם היית משקיע את אותם הסכומים במדד S&P 500.
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+<!-- כותרת ראשית והסבר -->
+<div class="text-center mb-8">
+<h1 class="text-3xl font-bold text-gray-800 mb-2">השוואת ביצועי תיק השקעות</h1>
+<p class="text-gray-600 mb-1">השווה את ביצועי התיק שלך למדד S&amp;P 500</p>
+<p class="text-sm text-gray-500">@פרופ' גיל</p>
+<p class="text-sm text-red-600 font-semibold mt-4 text-center">
+  המידע באתר מיועד ללימוד בלבד ואינו מהווה הצעה לקנייה או מכירה של מוצרים פיננסיים.<br/>
+  אני לא יועץ השקעות מוסמך, והמידע אינו מחליף ייעוץ מותאם אישית.<br/>
+  החלטות השקעה על אחריותכם בלבד. ייתכן שאני מחזיק בחלק מהמניות או המדדים המוזכרים.
+</p>
+<div class="flex justify-center mt-4 space-x-4 space-x-reverse">
+<a class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg flex items-center" href="https://chat.whatsapp.com/Eiji0CIWupSLZBPjXQf8MI" target="_blank">
+    הצטרף לקבוצת הווטסאפ
+  </a>
+<a class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg" href="https://gilepstein.github.io/prof-gil-website/" target="_blank">
+    בקר באתר שלי
+  </a>
+</div>
+</div>
+<!-- הסבר מפורט והורדה -->
+<div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+<!-- חלק 1: הצגת הרעיון עם שורה חדשה לאחר המשפט הראשון -->
+<p class="text-gray-700 mb-6 leading-relaxed">
+        עם הכלי הזה תוכל לבדוק האם אסטרטגיית השקעה חלופית הייתה מניבה תשואה גבוהה יותר.<br/>
+        במקום לבצע קניות ומכירות במניות ספציפיות, תוכל לבדוק מה הייתה התשואה אם היית משקיע את אותם הסכומים במדד S&amp;P 500.
       </p>
-      <!-- חלק 2: הסבר על השימוש -->
-      <p class="text-gray-700 mb-6 leading-relaxed">
+<!-- חלק 2: הסבר על השימוש -->
+<p class="text-gray-700 mb-6 leading-relaxed">
         לצורך השוואה, מומלץ להוריד את קובץ ה-CSV לדוגמה, למלא אותו עם נתוני העסקאות שביצעת, ולאחר מכן להעלות אותו למערכת. המערכת תחשב עבורך את התשואה שהיית מקבל מהשקעה במדד ותאפשר לך להשוות את ביצועי התיק שלך עם ביצועי המדד.
       </p>
-      <div class="text-center">
-        <button onclick="downloadSampleFile()"
-                class="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm">
-          <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-          </svg>
+<div class="text-center">
+<button class="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm" onclick="downloadSampleFile()">
+<svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
           הורד קובץ CSV לדוגמה
         </button>
-      </div>
-      
-      <!-- קישור לקבוצת הווטסאפ -->
-      <div class="text-center mt-6">
-        <p class="text-gray-700 mb-2">להצטרפות לקבוצת הווטסאפ שלי:</p>
-        <a href="https://chat.whatsapp.com/KPhdGsFcR9Q6jYcgmeYckM" 
-           target="_blank" 
-           class="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm">
-          <svg class="w-5 h-5 ml-2" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-          </svg>
-          הצטרף לקבוצת הווטסאפ
-        </a>
-      </div>
-    </div>
+</div>
+<!-- קישור לקבוצת הווטסאפ -->
+<div class="text-center mt-6">
+<p class="text-gray-700 mb-2">להצטרפות לקבוצת הווטסאפ שלי:</p>
 
-    <!-- אזור העלאת קובץ -->
-    <div id="dropZone" class="drop-zone mt-6">
-      <label for="fileInput" class="block w-full cursor-pointer">
-        <div class="flex flex-col items-center p-8 border-2 border-dashed border-blue-200 rounded-lg hover:border-blue-400 bg-blue-50 hover:bg-blue-100">
-          <svg class="w-16 h-16 mb-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-          </svg>
-          <h3 class="text-lg font-semibold text-gray-700 mb-2">העלה קובץ עסקאות</h3>
-          <p class="text-sm text-gray-500 text-center">גרור לכאן קובץ CSV או לחץ לבחירה</p>
-        </div>
-      </label>
-      <input id="fileInput" type="file" accept=".csv" class="hidden">
-    </div>
-
-    <!-- אזורי טעינה ושגיאות -->
-    <div id="loadingArea" class="hidden text-center py-8">
-      <div class="loading-spinner w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-      <p class="text-gray-600">מעבד את הנתונים...</p>
-    </div>
-    <div id="errorArea" class="hidden mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-      <div class="flex items-center text-red-700">
-        <svg class="w-5 h-5 ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <span id="errorMessage" class="font-medium"></span>
-      </div>
-    </div>
-
-    <!-- כותרת המציינת את תאריך הנתונים – מופיעה כאן לפני אזור התוצאות, עם רווח נוסף -->
-    <div class="text-center mt-8 mb-4">
-      <h2 id="validDate" class="text-2xl font-semibold text-gray-700"></h2>
-    </div>
-
-    <!-- אזור תוצאות -->
-    <div id="resultsArea" class="hidden mt-8 space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- שווי נוכחי -->
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <svg class="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <h3 class="text-lg font-semibold">שווי נוכחי</h3>
-          </div>
-          <p id="currentValue" class="text-3xl font-bold mb-2">$0.00</p>
-          <p id="totalUnits" class="text-blue-100">0 יחידות</p>
-        </div>
-        <!-- תשואה -->
-        <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <svg class="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-            </svg>
-            <h3 class="text-lg font-semibold">תשואה כוללת</h3>
-          </div>
-          <p id="returnRate" class="text-3xl font-bold mb-2">0%</p>
-          <p id="totalInvested" class="text-green-100">השקעה: $0</p>
-        </div>
-      </div>
-      <div class="bg-white rounded-xl p-6 border border-gray-200">
-        <h3 class="text-lg font-semibold mb-4 flex items-center">
-          <svg class="w-5 h-5 ml-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
+</div>
+</div>
+<!-- אזור העלאת קובץ -->
+<div class="drop-zone mt-6" id="dropZone">
+<label class="block w-full cursor-pointer" for="fileInput">
+<div class="flex flex-col items-center p-8 border-2 border-dashed border-blue-200 rounded-lg hover:border-blue-400 bg-blue-50 hover:bg-blue-100">
+<svg class="w-16 h-16 mb-4 text-blue-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<h3 class="text-lg font-semibold text-gray-700 mb-2">העלה קובץ עסקאות</h3>
+<p class="text-sm text-gray-500 text-center">גרור לכאן קובץ CSV או לחץ לבחירה</p>
+</div>
+</label>
+<input accept=".csv" class="hidden" id="fileInput" type="file"/>
+</div>
+<!-- אזורי טעינה ושגיאות -->
+<div class="hidden text-center py-8" id="loadingArea">
+<div class="loading-spinner w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+<p class="text-gray-600">מעבד את הנתונים...</p>
+</div>
+<div class="hidden mt-6 p-4 bg-red-50 border border-red-200 rounded-lg" id="errorArea">
+<div class="flex items-center text-red-700">
+<svg class="w-5 h-5 ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="font-medium" id="errorMessage"></span>
+</div>
+</div>
+<!-- כותרת המציינת את תאריך הנתונים – מופיעה כאן לפני אזור התוצאות, עם רווח נוסף -->
+<div class="text-center mt-8 mb-4">
+<h2 class="text-2xl font-semibold text-gray-700" id="validDate"></h2>
+</div>
+<!-- אזור תוצאות -->
+<div class="hidden mt-8 space-y-6" id="resultsArea">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- שווי נוכחי -->
+<div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6">
+<div class="flex items-center justify-between mb-4">
+<svg class="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<h3 class="text-lg font-semibold">שווי נוכחי</h3>
+</div>
+<p class="text-3xl font-bold mb-2" id="currentValue">$0.00</p>
+<p class="text-blue-100" id="totalUnits">0 יחידות</p>
+</div>
+<!-- תשואה -->
+<div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6">
+<div class="flex items-center justify-between mb-4">
+<svg class="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<h3 class="text-lg font-semibold">תשואה כוללת</h3>
+</div>
+<p class="text-3xl font-bold mb-2" id="returnRate">0%</p>
+<p class="text-green-100" id="totalInvested">השקעה: $0</p>
+</div>
+</div>
+<div class="bg-white rounded-xl p-6 border border-gray-200">
+<h3 class="text-lg font-semibold mb-4 flex items-center">
+<svg class="w-5 h-5 ml-2 text-blue-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
           פרטים נוספים
         </h3>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="p-4 bg-gray-50 rounded-lg">
-            <p class="text-sm text-gray-500 mb-1">מחיר אחרון</p>
-            <p id="lastPrice" class="text-xl font-semibold">$0.00</p>
-          </div>
-          <div class="p-4 bg-gray-50 rounded-lg">
-            <p class="text-sm text-gray-500 mb-1">מספר עסקאות</p>
-            <p id="totalTransactions" class="text-xl font-semibold">0</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- תמיד להשתמש בכתובת מדויקת לסקריפט -->
-  <script src="script.js"></script>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-4 bg-gray-50 rounded-lg">
+<p class="text-sm text-gray-500 mb-1">מחיר אחרון</p>
+<p class="text-xl font-semibold" id="lastPrice">$0.00</p>
+</div>
+<div class="p-4 bg-gray-50 rounded-lg">
+<p class="text-sm text-gray-500 mb-1">מספר עסקאות</p>
+<p class="text-xl font-semibold" id="totalTransactions">0</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- תמיד להשתמש בכתובת מדויקת לסקריפט -->
+<script src="script.js"></script>
 </body>
 </html>

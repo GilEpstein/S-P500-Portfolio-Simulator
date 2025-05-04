@@ -40,6 +40,7 @@ else:
         print(f"✅ Added: {formatted_date} – {closing_price}")
 
     # Remove duplicates and sort
+    df["Month"] = pd.to_datetime(df["Month"], dayfirst=True, errors='coerce')
     df.drop_duplicates(subset="Month", keep="last", inplace=True)
     df.sort_values("Month", inplace=True)
     df.to_csv(csv_file, index=False)

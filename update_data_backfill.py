@@ -1,47 +1,33 @@
-import yfinance as yf
+import requests
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
+from urllib.parse import urlencode
 
 # Define CSV path
-csv_file = "sp500_data.csv"
+FILE_NAME = "sp500_data.csv"
 
-# Fetch ticker
-ticker = yf.Ticker("^GSPC")
+API_KEY = os.environ["API_KEY"]
+SYMBOL = "^GSPC"
+API_DATE_FORMAT="%Y-%m-%d"
+API_PARAMS = {
+    "symbol": "^GSPC",
+    "apikey": API_KEY,
+    "from": datetime(year=1929, month=1, day=1).strftime(API_DATE_FORMAT),
+    "to": datetime.now().strftime(API_DATE_FORMAT),
+}
+API_ENDPOINT = f"https://financialmodelingprep.com/stable/historical-price-eod/full?{urlencode(API_PARAMS)}"
 
-# Try to load existing data
-if os.path.exists(csv_file):
-    df = pd.read_csv(csv_file)
 
-    if 'Month' in df.columns:
-        df["Month"] = pd.to_datetime(df["Month"], dayfirst=True, errors='coerce')
-        last_date = df["Month"].max()
-        start_date = last_date + timedelta(days=1)
-    else:
-        print("⚠️ Warning: 'Month' column not found. Creating new structure.")
-        df = pd.DataFrame(columns=["Month", "Closing"])
-        start_date = datetime(1930, 1, 1)
-else:
-    df = pd.DataFrame(columns=["Month", "Closing"])
-    start_date = datetime(1930, 1, 1)
+response = requests.get(API_ENDPOINT)
 
-end_date = datetime.today()
+if response.status_code != 200:
+    msg = f"Error while fetching data: {response.content}"
+    print(msg)
+    raise Exception(msg)
 
-# Download new data
-hist = ticker.history(start=start_date, end=end_date)
 
-if hist.empty:
-    print("ℹ️ No new data available.")
-else:
-    for date, row in hist.iterrows():
-        formatted_date = date.strftime("%d/%m/%Y")
-        closing_price = round(row["Close"], 2)
-        df = pd.concat([df, pd.DataFrame([{"Month": formatted_date, "Closing": closing_price}])], ignore_index=True)
-        print(f"✅ Added: {formatted_date} – {closing_price}")
-
-    # Remove duplicates and sort
-    df["Month"] = pd.to_datetime(df["Month"], dayfirst=True, errors='coerce')
-    df.drop_duplicates(subset="Month", keep="last", inplace=True)
-    df.sort_values("Month", inplace=True)
-    df.to_csv(csv_file, index=False)
-    print("✅ CSV updated successfully.")
+table = pd.DataFrame(response.json())
+table.rename(columns={"date": "Month", "close": "Closing"}, inplace=True)
+table.drop(columns="symbol", inplace=True)
+table.to_csv(FILE_NAME, index=False)

@@ -1,6 +1,6 @@
 // Offline cache for the chord trainer
-const CACHE = 'chord-trainer-v3';
-const FILES = ['chord-trainer_v3.html', 'manifest.json', 'icon.svg'];
+const CACHE = 'chord-trainer-v4';
+const FILES = ['chord-trainer_v4.html', 'manifest.json', 'icon.svg'];
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))));
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))));
 self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));

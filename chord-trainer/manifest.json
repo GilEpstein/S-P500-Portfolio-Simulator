@@ -1,0 +1,11 @@
+{
+  "name": "מאמן אקורדים לגיטרה",
+  "short_name": "אקורדים",
+  "start_url": "chord-trainer_v3.html",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "he",
+  "background_color": "#f6f4ef",
+  "theme_color": "#1f5f8b",
+  "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml"}]
+}

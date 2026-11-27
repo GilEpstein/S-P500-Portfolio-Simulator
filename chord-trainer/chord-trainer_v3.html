@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מאמן אקורדים</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f5f8b">
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1d232b;--muted:#6b7380;--accent:#1f5f8b;--ok:#2e8b57;--bad:#c0392b;--line:#d9d5cc}
+@media (prefers-color-scheme:dark){:root{--bg:#15181c;--card:#1f242a;--ink:#e9ecef;--muted:#9aa3ad;--accent:#5fa8d9;--ok:#4fc184;--bad:#ff6b5b;--line:#333a42}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,"Segoe UI",Arial,sans-serif;line-height:1.5}
+main{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:.2rem 0 1rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{flex:1}
+button{font:inherit;padding:10px 14px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+button.on{outline:2px solid var(--accent)}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#chordName{font-size:5rem;font-weight:700;text-align:center;direction:ltr;margin:.2rem 0}
+#status{text-align:center;min-height:1.6em;font-size:1.15rem}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.muted{color:var(--muted)}
+#meter{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:8px 0}
+#meterFill{height:100%;width:0;background:var(--accent);transition:width .05s}
+#diagram{display:flex;justify-content:center;min-height:10px}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{padding:6px;border-bottom:1px solid var(--line);text-align:center}
+td.n{direction:ltr;font-weight:600}
+label.chk{display:inline-flex;gap:4px;align-items:center;margin:3px 8px 3px 0;direction:ltr}
+.seq{direction:ltr;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;font-size:1.6rem;margin:8px 0}
+.seq span{padding:4px 10px;border-radius:8px;border:1px solid var(--line)}
+.seq span.cur{background:var(--accent);color:#fff}
+.seq span.done{color:var(--ok);border-color:var(--ok)}
+input[type=text]{font:inherit;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);direction:ltr;flex:1;min-width:180px}
+input[type=range]{width:180px}
+.small{font-size:.88rem}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>מאמן אקורדים לגיטרה</h1>
+
+<div class="tabs">
+  <button id="tabDrill" class="on">תרגול</button>
+  <button id="tabSong">שיר</button>
+  <button id="tabStats">טבלה</button>
+  <button id="tabSettings">הגדרות</button>
+</div>
+
+<section id="paneDrill" class="card">
+  <div class="row">
+    <button id="btnStart" class="primary">התחל עם מיקרופון</button>
+    <button id="btnNoMic">בלי מיקרופון</button>
+    <button id="btnStop" disabled>עצור</button>
+  </div>
+  <div id="chordName">&nbsp;</div>
+  <div id="status" class="muted">בחר אקורדים בהגדרות ולחץ התחל.</div>
+  <div id="meter"><div id="meterFill"></div></div>
+  <div id="diagram"></div>
+  <div class="row" style="justify-content:center;margin-top:8px">
+    <button id="btnHint" disabled>הראה ציור</button>
+    <button id="btnSkip" disabled>דלג</button>
+    <button id="btnRight" class="hidden">צדקתי</button>
+    <button id="btnWrong" class="hidden">טעיתי</button>
+  </div>
+</section>
+
+<section id="paneSong" class="card hidden">
+  <div class="row">
+    <input type="text" id="seqInput" value="Em Em Am Am">
+    <select id="seqPreset"></select>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <button id="btnSongStart" class="primary">התחל רצף</button>
+    <button id="btnSongStop" disabled>עצור</button>
+  </div>
+  <div class="seq" id="seqView"></div>
+  <div id="songStatus" style="text-align:center" class="muted">כל אקורד ברצף נבדק לפי הסדר. נמדד זמן המעבר בין אקורד לאקורד.</div>
+  <div id="songDiagram" style="display:flex;justify-content:center"></div>
+  <div id="songResult" class="small"></div>
+</section>
+
+<section id="paneStats" class="card hidden">
+  <table>
+    <thead><tr><th>אקורד</th><th>ניסיונות</th><th>הצלחות</th><th>אחוז</th><th>זמן שליפה ממוצע</th></tr></thead>
+    <tbody id="statsBody"></tbody>
+  </table>
+  <div class="row" style="margin-top:10px"><button id="btnReset">אפס טבלה</button></div>
+</section>
+
+<section id="paneSettings" class="card hidden">
+  <h3 style="margin-top:0">אקורדים פעילים</h3>
+  <div id="chordChecks"></div>
+  <p class="small muted">אקורדי המילון (Dm, Bm, A7, B7) הוזנו באצבוע המקובל. כדאי לוודא מול החוברת.</p>
+  <h3>הקראה</h3>
+  <label class="chk"><input type="checkbox" id="optSpeak" checked> הקרא את שם האקורד</label>
+  <h3>כיול זיהוי</h3>
+  <div class="small">
+    <div class="row">סף עוצמה מינימלי <input type="range" id="cfgRms" min="0.003" max="0.05" step="0.001"> <span id="vRms"></span></div>
+    <div class="row">ציון מינימלי לזיהוי <input type="range" id="cfgScore" min="0.4" max="0.9" step="0.01"> <span id="vScore"></span></div>
+    <div class="row">טווח פסגות (דציבל מתחת לשיא) <input type="range" id="cfgDb" min="20" max="50" step="1"> <span id="vDb"></span></div>
+    <div class="row"><button id="btnDefaults">ערכי ברירת מחדל</button></div>
+    <p>רעש רקע נוכחי: <span id="vNoise">לא נמדד</span>. סף פעיל: <span id="vThr">לא נמדד</span>.</p>
+    <p>זיהוי אחרון: <span id="vLast" style="direction:ltr;display:inline-block">אין</span></p>
+    <p class="muted">אם פריטה לא נקלטת, הורד את סף העוצמה. אם אקורד נכון מסומן "לא הצלחתי לזהות", הורד את הציון המינימלי. אם אקורדים מתבלבלים, העלה אותו.</p>
+  </div>
+</section>
+</main>
+
+<script>
+/* CORE-START: pure detection logic, no browser APIs */
+const OPEN_MIDI = [40, 45, 50, 55, 59, 64]; // strings 6..1: E2 A2 D3 G3 B3 E4
+const CHORDS = {
+  Em: {frets:[0,2,2,0,0,0], group:'שבוע 1'},
+  Am: {frets:[-1,0,2,2,1,0], group:'שבוע 1'},
+  C:  {frets:[-1,3,2,0,1,0], group:'שבוע 1'},
+  F:  {frets:[-1,-1,3,2,1,0], group:'שבוע 1'},
+  D:  {frets:[-1,-1,0,2,3,2], group:'שבוע 2'},
+  G:  {frets:[3,2,0,0,0,3], group:'שבוע 2'},
+  E:  {frets:[0,2,2,1,0,0], group:'שבוע 3'},
+  A:  {frets:[-1,0,2,2,2,0], group:'שבוע 3'},
+  Dm: {frets:[-1,-1,0,2,3,1], group:'מילון'},
+  Bm: {frets:[-1,2,4,4,3,2], group:'מילון'},
+  A7: {frets:[-1,0,2,0,2,0], group:'מילון'},
+  B7: {frets:[-1,2,1,2,0,2], group:'מילון'}
+};
+const DEFAULT_CFG = {fMin:100, fMax:1600, peakDb:38, minScore:0.6, harmonics:5, rmsMin:0.012, noiseFactor:4, peakPow:0.5, centered:true};
+
+function midiToHz(m){ return 440 * Math.pow(2, (m - 69) / 12); }
+function hzToPc(f){ return (((Math.round(69 + 12 * Math.log2(f / 440))) % 12) + 12) % 12; }
+
+function chordTemplate(frets, cfg){
+  const c = new Array(12).fill(0);
+  frets.forEach((fr, i) => {
+    if (fr < 0) return;
+    const f0 = midiToHz(OPEN_MIDI[i] + fr);
+    for (let h = 1; h <= cfg.harmonics; h++){
+      const f = f0 * h;
+      if (f < cfg.fMin || f > cfg.fMax) continue;
+      c[hzToPc(f)] += 1 / h;
+    }
+  });
+  return c;
+}
+
+// mag: linear magnitude per FFT bin (length fftSize/2)
+function chromaFromMagnitudes(mag, sampleRate, fftSize, cfg){
+  const binHz = sampleRate / fftSize;
+  const lo = Math.max(1, Math.ceil(cfg.fMin / binHz));
+  const hi = Math.min(mag.length - 2, Math.floor(cfg.fMax / binHz));
+  let max = 0;
+  for (let k = lo; k <= hi; k++) if (mag[k] > max) max = mag[k];
+  const chroma = new Array(12).fill(0);
+  if (max <= 0) return chroma;
+  const thr = max * Math.pow(10, -cfg.peakDb / 20);
+  for (let k = lo; k <= hi; k++){
+    const m = mag[k];
+    if (m < thr || m <= mag[k-1] || m < mag[k+1]) continue;
+    // parabolic interpolation in dB for the true peak frequency
+    const a = 20*Math.log10(mag[k-1] + 1e-12), b = 20*Math.log10(m + 1e-12), g = 20*Math.log10(mag[k+1] + 1e-12);
+    const den = a - 2*b + g;
+    const off = den !== 0 ? 0.5 * (a - g) / den : 0;
+    chroma[hzToPc((k + off) * binHz)] += Math.pow(m / max, cfg.peakPow);
+  }
+  return chroma;
+}
+
+function cosine(a, b, centered){
+  let ma = 0, mb = 0;
+  if (centered){ for (let i = 0; i < 12; i++){ ma += a[i] / 12; mb += b[i] / 12; } }
+  let d = 0, na = 0, nb = 0;
+  for (let i = 0; i < 12; i++){ const x = a[i] - ma, y = b[i] - mb; d += x*y; na += x*x; nb += y*y; }
+  return (na && nb) ? d / Math.sqrt(na * nb) : 0;
+}
+
+function classifyChroma(chroma, names, cfg){
+  const ranked = names.map(n => ({name:n, score:cosine(chroma, chordTemplate(CHORDS[n].frets, cfg), cfg.centered)}))
+                      .sort((x, y) => y.score - x.score);
+  const best = ranked[0];
+  return {name: best && best.score >= cfg.minScore ? best.name : null, score: best ? best.score : 0, ranked};
+}
+
+function onsetThreshold(noiseRms, cfg){ return Math.max(cfg.rmsMin, cfg.noiseFactor * noiseRms); }
+/* CORE-END */
+
+// ---------- storage (best effort) ----------
+const store = {
+  get(k, d){ try { const v = localStorage.getItem('ct3_' + k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem('ct3_' + k, JSON.stringify(v)); } catch(e){} }
+};
+const cfg = Object.assign({}, DEFAULT_CFG, store.get('cfg', {}));
+let active = store.get('active', ['Em','Am','C','F']);
+let stats = store.get('stats', {});
+let speakOn = store.get('speak', true);
+
+// ---------- UI helpers ----------
+const $ = id => document.getElementById(id);
+function setStatus(t, cls){ const s = $('status'); s.textContent = t; s.className = cls || ''; }
+
+function diagramSVG(name){
+  const fr = CHORDS[name].frets, W = 170, H = 190, x0 = 25, dx = 24, y0 = 40, dy = 32;
+  const played = fr.filter(f => f > 0), maxF = played.length ? Math.max(...played) : 0;
+  const base = maxF > 4 ? Math.min(...played) : 1;
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="direction:ltr" role="img" aria-label="${name}">`;
+  s += `<text x="${W/2}" y="16" text-anchor="middle" font-size="15" font-weight="700" fill="currentColor">${name}</text>`;
+  for (let i = 0; i < 6; i++) s += `<line x1="${x0+i*dx}" y1="${y0}" x2="${x0+i*dx}" y2="${y0+4*dy}" stroke="currentColor" stroke-width="1.3"/>`;
+  for (let j = 0; j <= 4; j++) s += `<line x1="${x0}" y1="${y0+j*dy}" x2="${x0+5*dx}" y2="${y0+j*dy}" stroke="currentColor" stroke-width="${j===0&&base===1?4:1.3}"/>`;
+  if (base > 1) s += `<text x="${x0-8}" y="${y0+dy*0.65}" text-anchor="end" font-size="12" fill="currentColor">${base}</text>`;
+  fr.forEach((f, i) => {
+    const x = x0 + i*dx;
+    if (f < 0) s += `<text x="${x}" y="${y0-8}" text-anchor="middle" font-size="14" fill="currentColor">×</text>`;
+    else if (f === 0) s += `<circle cx="${x}" cy="${y0-13}" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/>`;
+    else s += `<circle cx="${x}" cy="${y0+(f-base+0.5)*dy}" r="9" fill="currentColor"/>`;
+  });
+  return s + `</svg>`;
+}
+
+// ---------- speech ----------
+const HE_ROOT = {C:'דו', D:'רה', E:'מי', F:'פה', G:'סול', A:'לה', B:'סי'};
+const EN_ROOT = {C:'C', D:'D', E:'E', F:'F', G:'G', A:'A', B:'B'};
+function spokenName(n, he){
+  const root = n[0], rest = n.slice(1);
+  if (he) return HE_ROOT[root] + (rest === 'm' ? ' מינור' : rest === '7' ? ' שבע' : ' מז\'ור');
+  return EN_ROOT[root] + (rest === 'm' ? ' minor' : rest === '7' ? ' seven' : ' major');
+}
+let muteUntil = 0;
+function speak(name){
+  return new Promise(resolve => {
+    if (!speakOn || !('speechSynthesis' in window)){ resolve(); return; }
+    const voices = speechSynthesis.getVoices();
+    const he = voices.find(v => /^he|^iw/i.test(v.lang));
+    const u = new SpeechSynthesisUtterance(spokenName(name, !!he));
+    if (he){ u.voice = he; u.lang = he.lang; } else u.lang = 'en-US';
+    u.rate = 0.95;
+    muteUntil = performance.now() + 4000;
+    let done = false;
+    const fin = () => { if (done) return; done = true; muteUntil = performance.now() + 350; resolve(); };
+    u.onend = fin; u.onerror = fin;
+    setTimeout(fin, 3500);
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  });
+}
+if ('speechSynthesis' in window) speechSynthesis.getVoices();
+
+// ---------- audio engine ----------
+const audio = {ctx:null, stream:null, fftA:null, rmsA:null, timer:null, state:'off', noise:0.003,
+               tOnset:0, acc:null, nAcc:0, prevRms:0, onResult:null, onOnset:null};
+
+async function startAudio(onResult, onOnset){
+  if (!audio.ctx){
+    audio.stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+    audio.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = audio.ctx.createMediaStreamSource(audio.stream);
+    audio.fftA = audio.ctx.createAnalyser(); audio.fftA.fftSize = 16384; audio.fftA.smoothingTimeConstant = 0;
+    audio.rmsA = audio.ctx.createAnalyser(); audio.rmsA.fftSize = 1024;
+    src.connect(audio.fftA); src.connect(audio.rmsA);
+  }
+  if (audio.ctx.state === 'suspended') await audio.ctx.resume();
+  audio.onResult = onResult; audio.onOnset = onOnset || null;
+  audio.state = 'listen';
+  clearInterval(audio.timer);
+  audio.timer = setInterval(tick, 25);
+}
+function stopAudio(){
+  clearInterval(audio.timer); audio.state = 'off';
+  $('meterFill').style.width = '0';
+}
+
+const tbuf = new Float32Array(1024);
+let fbuf = null;
+function tick(){
+  const now = performance.now();
+  audio.rmsA.getFloatTimeDomainData(tbuf);
+  let s = 0; for (let i = 0; i < tbuf.length; i++) s += tbuf[i]*tbuf[i];
+  const rms = Math.sqrt(s / tbuf.length);
+  $('meterFill').style.width = Math.min(100, rms * 600) + '%';
+  const thr = onsetThreshold(audio.noise, cfg);
+  if (audio.state === 'listen'){
+    if (now < muteUntil){ audio.prevRms = rms; return; }
+    const rising = rms > thr && rms > 1.6 * audio.prevRms;
+    if (rising){
+      audio.state = 'settle'; audio.tOnset = now;
+      if (audio.onOnset) audio.onOnset(now);
+    } else if (rms < thr){
+      audio.noise = 0.97 * audio.noise + 0.03 * rms; // slow noise floor tracking
+    }
+    audio.prevRms = 0.7 * audio.prevRms + 0.3 * rms;
+    $('vNoise').textContent = audio.noise.toFixed(4); $('vThr').textContent = thr.toFixed(4);
+  } else if (audio.state === 'settle'){
+    if (now - audio.tOnset >= 150){
+      audio.state = 'collect';
+      fbuf = fbuf || new Float32Array(audio.fftA.frequencyBinCount);
+      audio.acc = new Float64Array(audio.fftA.frequencyBinCount); audio.nAcc = 0;
+    }
+  } else if (audio.state === 'collect'){
+    audio.fftA.getFloatFrequencyData(fbuf);
+    for (let k = 0; k < fbuf.length; k++) audio.acc[k] += Math.pow(10, fbuf[k] / 20);
+    audio.nAcc++;
+    if (now - audio.tOnset >= 1000){
+      for (let k = 0; k < audio.acc.length; k++) audio.acc[k] /= audio.nAcc;
+      const chroma = chromaFromMagnitudes(audio.acc, audio.ctx.sampleRate, audio.fftA.fftSize, cfg);
+      const res = classifyChroma(chroma, Object.keys(CHORDS), cfg);
+      // restrict to the active set, but report the global ranking for calibration
+      $('vLast').textContent = res.ranked.slice(0,3).map(r => r.name + ' ' + r.score.toFixed(2)).join(' | ');
+      audio.state = 'cooldown'; audio.tCool = now;
+      audio.prevRms = rms;
+      if (audio.onResult) audio.onResult(res, audio.tOnset);
+    }
+  } else if (audio.state === 'cooldown'){
+    audio.prevRms = 0.7 * audio.prevRms + 0.3 * rms;
+    if (now - audio.tCool > 250) audio.state = 'listen';
+  }
+}
+
+// Classification against the chords the user can be asked about
+function judge(res, pool){
+  const r = res.ranked.filter(x => pool.includes(x.name));
+  const best = r[0];
+  if (!best || best.score < cfg.minScore) return null;
+  return best.name;
+}
+
+// ---------- drill mode ----------
+const drill = {on:false, mic:false, cur:null, prev:null, t0:0, mistakes:0, fails:{}, hinted:false};
+function pickChord(){
+  const pool = active.filter(n => CHORDS[n]);
+  if (!pool.length) return null;
+  const w = pool.map(n => (n === drill.prev && pool.length > 1) ? 0 : 1 + 2 * (drill.fails[n] || 0) + (stats[n] && stats[n].a ? (1 - stats[n].s / stats[n].a) : 1));
+  let r = Math.random() * w.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < pool.length; i++){ r -= w[i]; if (r <= 0) return pool[i]; }
+  return pool[pool.length - 1];
+}
+function record(name, ok, ms){
+  const st = stats[name] || (stats[name] = {a:0, s:0, t:0});
+  st.a++; if (ok){ st.s++; st.t += ms; }
+  store.set('stats', stats); renderStats();
+}
+async function nextChord(){
+  if (!drill.on) return;
+  const n = pickChord();
+  if (!n){ setStatus('לא נבחרו אקורדים. בחר בהגדרות.', 'bad'); stopDrill(); return; }
+  drill.prev = drill.cur = n; drill.mistakes = 0; drill.hinted = false;
+  $('chordName').textContent = n; $('diagram').innerHTML = '';
+  drill.t0 = performance.now();
+  setStatus(drill.mic ? 'נגן את האקורד' : 'דמיין את האצבוע, ואז לחץ הראה ציור', 'muted');
+  await speak(n);
+}
+function onDrillResult(res, tOnset){
+  if (!drill.on) return;
+  const pool = active.filter(n => CHORDS[n]);
+  const heard = judge(res, pool);
+  if (!heard){ setStatus('לא הצלחתי לזהות. נסה לפרוט שוב, נקי וחזק.', 'muted'); return; }
+  if (heard === drill.cur){
+    const ms = tOnset - drill.t0;
+    if (drill.mistakes === 0 && !drill.hinted){ record(drill.cur, true, ms); drill.fails[drill.cur] = Math.max(0, (drill.fails[drill.cur]||0) - 1); }
+    setStatus('נכון! ' + (ms/1000).toFixed(1) + ' שניות', 'ok');
+    setTimeout(nextChord, 900);
+  } else {
+    drill.mistakes++;
+    if (drill.mistakes === 1) setStatus('שמעתי ' + heard + '. נסה שוב.', 'bad');
+    else {
+      if (drill.mistakes === 2){ record(drill.cur, false, 0); drill.fails[drill.cur] = (drill.fails[drill.cur]||0) + 1; }
+      setStatus('שמעתי ' + heard + '. כך מנגנים ' + drill.cur + ':', 'bad');
+      $('diagram').innerHTML = diagramSVG(drill.cur);
+    }
+  }
+}
+async function startDrill(mic){
+  stopSong();
+  drill.on = true; drill.mic = mic; drill.cur = null;
+  $('btnStop').disabled = false; $('btnSkip').disabled = false; $('btnHint').disabled = false;
+  $('btnStart').disabled = true; $('btnNoMic').disabled = true;
+  $('btnRight').classList.toggle('hidden', mic); $('btnWrong').classList.toggle('hidden', mic);
+  if (mic){
+    try { await startAudio(onDrillResult); }
+    catch(e){ setStatus('אין גישה למיקרופון. פתח את הדף מ-localhost או מכתובת https, או עבור למצב בלי מיקרופון.', 'bad'); stopDrill(); return; }
+  }
+  nextChord();
+}
+function stopDrill(){
+  drill.on = false; stopAudio();
+  $('btnStop').disabled = true; $('btnSkip').disabled = true; $('btnHint').disabled = true;
+  $('btnStart').disabled = false; $('btnNoMic').disabled = false;
+  $('btnRight').classList.add('hidden'); $('btnWrong').classList.add('hidden');
+}
+$('btnStart').onclick = () => startDrill(true);
+$('btnNoMic').onclick = () => startDrill(false);
+$('btnStop').onclick = () => { stopDrill(); setStatus('נעצר.', 'muted'); };
+$('btnSkip').onclick = () => { if (drill.cur){ record(drill.cur, false, 0); drill.fails[drill.cur] = (drill.fails[drill.cur]||0) + 1; } nextChord(); };
+$('btnHint').onclick = () => {
+  if (!drill.cur) return;
+  if (drill.mic && !drill.hinted && drill.mistakes < 2){ record(drill.cur, false, 0); drill.fails[drill.cur] = (drill.fails[drill.cur]||0) + 1; }
+  drill.hinted = true; drill.tHint = performance.now();
+  $('diagram').innerHTML = diagramSVG(drill.cur);
+};
+$('btnRight').onclick = () => { if (!drill.cur) return; const ms = (drill.tHint || performance.now()) - drill.t0; record(drill.cur, true, ms); drill.tHint = 0; nextChord(); };
+$('btnWrong').onclick = () => { if (!drill.cur) return; record(drill.cur, false, 0); drill.fails[drill.cur] = (drill.fails[drill.cur]||0) + 1; drill.tHint = 0; nextChord(); };
+
+// ---------- song mode ----------
+const PRESETS = [
+  ['Em Em Am Am', 'Em Em Am Am (מהחוברת)'],
+  ['Em Am C F', 'כל אקורדי שבוע 1'],
+  ['C Am F C', 'C Am F C'],
+  ['G D Em C', 'G D Em C'],
+  ['A D E A', 'A D E A'],
+  ['Em E Am A', 'מינור מול מז\'ור']
+];
+const song = {on:false, seq:[], i:0, tPrev:0, times:[], mistakes:0};
+function renderSeq(){
+  $('seqView').innerHTML = song.seq.map((n, i) => `<span class="${i < song.i ? 'done' : i === song.i && song.on ? 'cur' : ''}">${n}</span>`).join('');
+}
+function parseSeq(){
+  const raw = $('seqInput').value.trim().split(/[\s,|]+/).filter(Boolean);
+  const bad = raw.filter(n => !CHORDS[n]);
+  return {seq: raw.filter(n => CHORDS[n]), bad};
+}
+function onSongResult(res, tOnset){
+  if (!song.on) return;
+  const pool = Array.from(new Set(song.seq.concat(active)));
+  const heard = judge(res, pool);
+  const want = song.seq[song.i];
+  if (!heard){ $('songStatus').textContent = 'לא הצלחתי לזהות. פרוט שוב.'; return; }
+  if (heard !== want){
+    song.mistakes++;
+    $('songStatus').innerHTML = `<span class="bad">שמעתי ${heard}, מחכה ל-${want}</span>`;
+    if (song.mistakes >= 2) $('songDiagram').innerHTML = diagramSVG(want);
+    return;
+  }
+  if (song.i > 0) song.times.push({from: song.seq[song.i-1], to: want, ms: tOnset - song.tPrev, miss: song.mistakes});
+  song.tPrev = tOnset; song.mistakes = 0; song.i++;
+  $('songDiagram').innerHTML = '';
+  if (song.i >= song.seq.length){ finishSong(); return; }
+  $('songStatus').innerHTML = `<span class="ok">נכון</span>. הבא: ${song.seq[song.i]}`;
+  renderSeq();
+}
+function finishSong(){
+  song.on = false; stopAudio(); renderSeq();
+  $('btnSongStart').disabled = false; $('btnSongStop').disabled = true;
+  const total = song.times.reduce((a, t) => a + t.ms, 0);
+  $('songStatus').innerHTML = `<span class="ok">הרצף הושלם.</span>`;
+  $('songResult').innerHTML = `<table><thead><tr><th>מעבר</th><th>זמן</th><th>טעויות</th></tr></thead><tbody>` +
+    song.times.map(t => `<tr><td class="n">${t.from} → ${t.to}</td><td>${(t.ms/1000).toFixed(1)} ש'</td><td>${t.miss}</td></tr>`).join('') +
+    `</tbody></table><p>סך זמן המעברים: ${(total/1000).toFixed(1)} שניות.</p>`;
+  const hist = store.get('songs', []); hist.push({seq: song.seq.join(' '), total, date: Date.now()}); store.set('songs', hist.slice(-50));
+}
+async function startSong(){
+  stopDrill();
+  const {seq, bad} = parseSeq();
+  if (seq.length < 2){ $('songStatus').textContent = 'צריך לפחות שני אקורדים מוכרים ברצף.' + (bad.length ? ' לא מוכר: ' + bad.join(', ') : ''); return; }
+  Object.assign(song, {on:true, seq, i:0, times:[], mistakes:0, tPrev:0});
+  $('songResult').innerHTML = ''; $('songDiagram').innerHTML = '';
+  $('btnSongStart').disabled = true; $('btnSongStop').disabled = false;
+  try { await startAudio(onSongResult); }
+  catch(e){ $('songStatus').textContent = 'אין גישה למיקרופון. פתח מ-localhost או https.'; stopSong(); return; }
+  $('songStatus').textContent = 'נגן: ' + seq[0] + (bad.length ? ' (לא מוכר והושמט: ' + bad.join(', ') + ')' : '');
+  renderSeq();
+}
+function stopSong(){
+  if (!song.on) return;
+  song.on = false; stopAudio(); renderSeq();
+  $('btnSongStart').disabled = false; $('btnSongStop').disabled = true;
+}
+$('btnSongStart').onclick = startSong;
+$('btnSongStop').onclick = () => { stopSong(); $('songStatus').textContent = 'נעצר.'; };
+$('seqPreset').innerHTML = '<option value="">רצפים מוכנים</option>' + PRESETS.map(p => `<option value="${p[0]}">${p[1]}</option>`).join('');
+$('seqPreset').onchange = e => { if (e.target.value){ $('seqInput').value = e.target.value; song.seq = parseSeq().seq; song.i = 0; renderSeq(); } };
+$('seqInput').oninput = () => { if (!song.on){ song.seq = parseSeq().seq; song.i = 0; renderSeq(); } };
+
+// ---------- stats ----------
+function renderStats(){
+  const names = Object.keys(CHORDS).filter(n => stats[n] && stats[n].a);
+  $('statsBody').innerHTML = names.length ? names.map(n => {
+    const st = stats[n];
+    return `<tr><td class="n">${n}</td><td>${st.a}</td><td>${st.s}</td><td>${Math.round(100*st.s/st.a)}%</td><td>${st.s ? (st.t/st.s/1000).toFixed(1) + ' ש\'' : ''}</td></tr>`;
+  }).join('') : '<tr><td colspan="5" class="muted">עוד אין נתונים</td></tr>';
+}
+$('btnReset').onclick = () => { if (confirm('לאפס את הטבלה?')){ stats = {}; store.set('stats', stats); renderStats(); } };
+
+// ---------- settings ----------
+function renderChecks(){
+  const groups = {};
+  Object.keys(CHORDS).forEach(n => (groups[CHORDS[n].group] = groups[CHORDS[n].group] || []).push(n));
+  $('chordChecks').innerHTML = Object.keys(groups).map(g =>
+    `<div><b>${g}:</b> ` + groups[g].map(n => `<label class="chk"><input type="checkbox" data-c="${n}" ${active.includes(n) ? 'checked' : ''}>${n}</label>`).join('') + '</div>').join('');
+  $('chordChecks').querySelectorAll('input').forEach(el => el.onchange = () => {
+    active = Array.from($('chordChecks').querySelectorAll('input:checked')).map(x => x.dataset.c);
+    store.set('active', active);
+  });
+}
+function bindRange(id, key, out, fmt){
+  const el = $(id); el.value = cfg[key]; $(out).textContent = fmt(cfg[key]);
+  el.oninput = () => { cfg[key] = parseFloat(el.value); $(out).textContent = fmt(cfg[key]); store.set('cfg', cfg); };
+}
+function renderSettings(){
+  bindRange('cfgRms', 'rmsMin', 'vRms', v => v.toFixed(3));
+  bindRange('cfgScore', 'minScore', 'vScore', v => v.toFixed(2));
+  bindRange('cfgDb', 'peakDb', 'vDb', v => v + '');
+}
+$('btnDefaults').onclick = () => { Object.assign(cfg, DEFAULT_CFG); store.set('cfg', cfg); renderSettings(); };
+$('optSpeak').checked = speakOn;
+$('optSpeak').onchange = e => { speakOn = e.target.checked; store.set('speak', speakOn); };
+
+// ---------- tabs ----------
+const tabs = {tabDrill:'paneDrill', tabSong:'paneSong', tabStats:'paneStats', tabSettings:'paneSettings'};
+Object.keys(tabs).forEach(t => $(t).onclick = () => {
+  Object.keys(tabs).forEach(x => { $(x).classList.toggle('on', x === t); $(tabs[x]).classList.toggle('hidden', x !== t); });
+});
+
+renderChecks(); renderSettings(); renderStats(); song.seq = parseSeq().seq; renderSeq();
+if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
